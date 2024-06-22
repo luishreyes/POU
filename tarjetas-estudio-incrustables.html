@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjetas de estudio: Pan de masa madre</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: transparent;
+        }
+        .card-container {
+            width: 300px;
+            height: 200px;
+            perspective: 1000px;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .card-front {
+            background-color: #007bff;
+            color: white;
+        }
+        .card-back {
+            background-color: white;
+            color: #333;
+            transform: rotateY(180deg);
+        }
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        .nav-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="card-container">
+            <div class="card" onclick="flipCard()">
+                <div class="card-face card-front">
+                    <h2 id="question"></h2>
+                </div>
+                <div class="card-face card-back">
+                    <p id="answer"></p>
+                </div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button id="prevBtn" onclick="changeCard(-1)">Anterior</button>
+            <span id="cardNumber"></span>
+            <button id="nextBtn" onclick="changeCard(1)">Siguiente</button>
+        </div>
+    </div>
+
+    <script>
+        const cards = [
+            { question: "¿Cuáles son los ingredientes principales del pan de masa madre?", answer: "Harina de trigo integral, agua tibia, masa madre activa y sal." },
+            { question: "¿Cuánto tiempo dura la primera fermentación?", answer: "La primera fermentación dura de 4 a 6 horas a temperatura ambiente." },
+            { question: "¿A qué temperatura se debe precalentar el horno?", answer: "El horno debe precalentarse a 230°C." },
+            { question: "¿Cuánto tiempo se debe hornear el pan?", answer: "El pan se debe hornear durante 35-40 minutos." },
+            { question: "¿Cuál es la temperatura ideal para la fermentación?", answer: "La temperatura ideal para la fermentación es entre 21°C y 26°C." },
+            { question: "¿Qué consejo se da sobre la hidratación?", answer: "Ajusta la cantidad de agua según el tipo de harina. Las harinas integrales suelen necesitar más agua." }
+        ];
+
+        let currentCard = 0;
+
+        function updateCard() {
+            document.getElementById('question').textContent = cards[currentCard].question;
+            document.getElementById('answer').textContent = cards[currentCard].answer;
+            document.getElementById('cardNumber').textContent = `${currentCard + 1} / ${cards.length}`;
+            document.getElementById('prevBtn').disabled = currentCard === 0;
+            document.getElementById('nextBtn').disabled = currentCard === cards.length - 1;
+        }
+
+        function flipCard() {
+            document.querySelector('.card').classList.toggle('flipped');
+        }
+
+        function changeCard(direction) {
+            currentCard += direction;
+            if (currentCard < 0) currentCard = 0;
+            if (currentCard >= cards.length) currentCard = cards.length - 1;
+            updateCard();
+            document.querySelector('.card').classList.remove('flipped');
+        }
+
+        updateCard();
+    </script>
+</body>
+</html>
