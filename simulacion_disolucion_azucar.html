@@ -747,7 +747,7 @@ function updateSugarParticles(dt) {
   }
 
   // Angular velocity for stirring visual
-  var omega = rpm > 0 ? (2 * Math.PI * rpm / 60) * 0.12 : 0;
+  var omega = rpm > 0 ? (2 * Math.PI * rpm / 60) * 0.7 : 0;
   var diffScale = Dsucrose(temperature) / Dsucrose(80);
 
   for (var i = 0; i < sugarParticles.length; i++) {
@@ -775,7 +775,7 @@ function updateSugarParticles(dt) {
       if (omega > 0 && dist > 0.01) {
         var tx = -dy / dist;
         var ty = dx / dist;
-        var ss = omega * 0.0008 * Math.min(dist * 3, 1);
+        var ss = omega * 0.006 * Math.min(dist * 3, 1);
         p.x += tx * ss * dt;
         p.y += ty * ss * dt;
       }
@@ -807,8 +807,8 @@ function updateSugarParticles(dt) {
       if (omega > 0 && dist > 0.008) {
         var tx = -dy / dist;
         var ty = dx / dist;
-        p.x += tx * omega * 0.00015 * dt;
-        p.y += ty * omega * 0.00015 * dt;
+        p.x += tx * omega * 0.003 * dt;
+        p.y += ty * omega * 0.003 * dt;
       }
       // Jitter
       p.x += (Math.random() - 0.5) * 0.0008;
@@ -1090,7 +1090,7 @@ function drawFlowLines(ctx, cx, cy, cupR) {
   ctx.save();
   ctx.globalAlpha = Math.min(0.35, rpm / 350);
   for (var i = 0; i < nLines; i++) {
-    var base = (i / nLines) * Math.PI * 2 + now * omega * 0.08;
+    var base = (i / nLines) * Math.PI * 2 + now * omega * 0.45;
     var r = cupR * (0.12 + (i % 5) * 0.16);
     ctx.beginPath();
     for (var a = 0; a < Math.PI * 1.3; a += 0.04) {
