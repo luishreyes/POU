@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Specification: Sugar Dissolution in Coffee Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           DESIGN SPECIFICATION DOCUMENT STYLES
+           This file documents the complete design system for the
+           sugar-dissolving-in-coffee interactive simulation.
+           ============================================================ */
+
+        :root {
+            --doc-bg: #0f0f14;
+            --doc-surface: #1a1a24;
+            --doc-border: #2a2a3a;
+            --doc-text: #e0e0e8;
+            --doc-accent: #c8956c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--doc-bg);
+            color: var(--doc-text);
+            line-height: 1.7;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: #fff;
+            border-bottom: 3px solid var(--doc-accent);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 4px solid var(--doc-accent);
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            color: var(--doc-accent);
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p, li { font-size: 0.95rem; margin-bottom: 0.5rem; }
+        ul { padding-left: 1.5rem; }
+
+        .section {
+            background: var(--doc-surface);
+            border: 1px solid var(--doc-border);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Color swatch display */
+        .palette-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .swatch {
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--doc-border);
+        }
+
+        .swatch-color {
+            height: 72px;
+            display: flex;
+            align-items: flex-end;
+            padding: 6px 10px;
+        }
+
+        .swatch-color span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.45);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .swatch-label {
+            background: var(--doc-surface);
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            color: #b0b0c0;
+        }
+
+        .swatch-label strong {
+            display: block;
+            color: var(--doc-text);
+            font-size: 0.85rem;
+        }
+
+        /* Code / CSS blocks */
+        .code-block {
+            background: #12121a;
+            border: 1px solid var(--doc-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            color: #c8d0e0;
+            white-space: pre;
+        }
+
+        .code-block .comment { color: #5a6a8a; }
+        .code-block .prop { color: #7ec8e3; }
+        .code-block .val { color: #c8956c; }
+        .code-block .sel { color: #e0a0d0; }
+        .code-block .str { color: #a8d8a0; }
+
+        /* Layout diagram */
+        .layout-diagram {
+            border: 2px solid var(--doc-border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .layout-row {
+            display: flex;
+            border-bottom: 1px dashed var(--doc-border);
+        }
+
+        .layout-row:last-child { border-bottom: none; }
+
+        .layout-cell {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #b0b0c0;
+        }
+
+        .layout-title-bar {
+            background: #1e1b2e;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            color: var(--doc-accent);
+            font-weight: 600;
+            border-bottom: 1px solid var(--doc-border);
+        }
+
+        .layout-left {
+            flex: 6;
+            background: #1a1824;
+            min-height: 250px;
+            border-right: 1px dashed var(--doc-border);
+        }
+
+        .layout-right {
+            flex: 4;
+            background: #1c1a28;
+            min-height: 250px;
+        }
+
+        .layout-bottom {
+            background: #18162a;
+            width: 100%;
+            padding: 1rem;
+            text-align: center;
+            color: #8080a0;
+        }
+
+        /* Measurement table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: #1e1e2e;
+            color: var(--doc-accent);
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 2px solid var(--doc-border);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--doc-border);
+        }
+
+        tr:hover td {
+            background: rgba(200, 149, 108, 0.05);
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #a0c0e0;
+        }
+
+        /* Inline color chip */
+        .chip {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-right: 6px;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        /* Annotation callout */
+        .callout {
+            background: rgba(200, 149, 108, 0.08);
+            border-left: 3px solid var(--doc-accent);
+            padding: 1rem 1.25rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+        }
+
+        /* Canvas mock */
+        .canvas-mock {
+            width: 320px;
+            height: 320px;
+            margin: 1.5rem auto;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-mock .cup-rim {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 8px solid #3d3028;
+            box-shadow:
+                inset 0 0 30px rgba(0,0,0,0.5),
+                0 0 0 3px #2a2018,
+                0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .canvas-mock .coffee-surface {
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse at 40% 40%,
+                #5c3a1e 0%,
+                #3e2510 40%,
+                #2a1a0c 70%,
+                #1a0f06 100%
+            );
+        }
+
+        .canvas-mock .highlight {
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse,
+                rgba(255,220,180,0.15) 0%,
+                transparent 70%
+            );
+            top: 60px;
+            left: 80px;
+            transform: rotate(-20deg);
+        }
+
+        /* Button mock */
+        .btn-mock {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 4px;
+            border: none;
+            cursor: default;
+        }
+
+        .btn-primary { background: #c8956c; color: #1a1018; }
+        .btn-secondary { background: #2a2a3a; color: #d0d0e0; border: 1px solid #3a3a4a; }
+        .btn-danger { background: #8b3a3a; color: #f0d0d0; }
+
+        /* Slider mock */
+        .slider-mock {
+            width: 100%;
+            max-width: 280px;
+            margin: 0.75rem 0;
+        }
+
+        .slider-mock label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #8888a0;
+            margin-bottom: 4px;
+        }
+
+        .slider-mock label strong {
+            color: #d0d0e0;
+            font-weight: 500;
+        }
+
+        .slider-track {
+            height: 6px;
+            background: #2a2a3a;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .slider-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c8956c, #e8b88c);
+            border-radius: 3px;
+            width: 60%;
+        }
+
+        .slider-thumb {
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: -6px;
+            left: 58%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Graph mock */
+        .graph-mock {
+            background: #12121a;
+            border: 1px solid var(--doc-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .graph-mock svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Toggle mock */
+        .toggle-mock {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 22px;
+            background: #3a3a4a;
+            border-radius: 11px;
+            position: relative;
+        }
+
+        .toggle-switch.on { background: #c8956c; }
+
+        .toggle-switch::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: left 0.2s;
+        }
+
+        .toggle-switch.on::after { left: 21px; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-css { background: #264f78; color: #7ec8e3; }
+        .badge-canvas { background: #4a3060; color: #d0a0e8; }
+        .badge-js { background: #5a5020; color: #e8d888; }
+    </style>
+</head>
+<body>
+
+<h1>Sugar Dissolution in Coffee -- Interactive Simulation Design Specification</h1>
+<p style="color:#8888a0; margin-bottom: 2rem;">
+    Version 1.0 -- Single-file HTML application -- Self-contained, no external dependencies at runtime<br>
+    Target: Desktop-first responsive design, canvas-based visualization with real-time scientific graphing
+</p>
+
+<!-- ============================================================
+     SECTION 1: COLOR PALETTE
+     ============================================================ -->
+
+<div class="section">
+    <h2>1. Color Palette</h2>
+
+    <h3>1.1 Coffee Spectrum (Primary Subject)</h3>
+    <p>A 7-stop gradient from nearly black espresso to light caramel, used for the coffee surface, concentration visualization, and dissolving feedback.</p>
+
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#1a0f06;"><span>#1A0F06</span></div>
+            <div class="swatch-label"><strong>Espresso Black</strong>Deepest coffee, cup edges</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#2a1a0c;"><span>#2A1A0C</span></div>
+            <div class="swatch-label"><strong>Dark Roast</strong>Mid-shadow on surface</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#3e2510;"><span>#3E2510</span></div>
+            <div class="swatch-label"><strong>French Press</strong>Primary coffee body</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#5c3a1e;"><span>#5C3A1E</span></div>
+            <div class="swatch-label"><strong>Medium Roast</strong>Center highlight zone</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#8b5e3c;"><span>#8B5E3C</span></div>
+            <div class="swatch-label"><strong>Light Roast</strong>Sweetened coffee tone</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#b8845a;"><span>#B8845A</span></div>
+            <div class="swatch-label"><strong>Cafe au Lait</strong>High-sugar dissolved</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#d4a574;"><span>#D4A574</span></div>
+            <div class="swatch-label"><strong>Caramel</strong>Maximum concentration</div>
+        </div>
+    </div>
+
+    <div class="callout">
+        <strong>Usage in simulation:</strong> As sugar dissolves, the coffee surface color interpolates from <span class="chip" style="background:#3e2510;"></span><code>#3E2510</code> toward <span class="chip" style="background:#8b5e3c;"></span><code>#8B5E3C</code>. The gradient is applied via canvas <code>createRadialGradient()</code> with stops shifting dynamically based on the current concentration value (0.0 to 1.0).
+    </div>
+
+    <h3>1.2 Sugar Particle Colors</h3>
+    <p>Sugar particles transition through these colors as they dissolve, from opaque white crystalline to fully transparent.</p>
+
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#FFFFFF;"><span style="color:#333;">#FFFFFF</span></div>
+            <div class="swatch-label"><strong>Crystal White</strong>Undissolved sugar, alpha 1.0</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#F5F0E8;"><span style="color:#333;">#F5F0E8</span></div>
+            <div class="swatch-label"><strong>Warm White</strong>Wetted sugar, alpha 0.9</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#E8DDD0;"><span style="color:#333;">#E8DDD0</span></div>
+            <div class="swatch-label"><strong>Dissolving</strong>Surface dissolving, alpha 0.6</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:rgba(232,221,208,0.3); border:1px dashed #555;"><span>#E8DDD0</span></div>
+            <div class="swatch-label"><strong>Near-dissolved</strong>Alpha 0.3, fading out</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:rgba(232,221,208,0.08); border:1px dashed #444;"><span>#E8DDD0</span></div>
+            <div class="swatch-label"><strong>Ghost</strong>Alpha 0.08, about to vanish</div>
+        </div>
+    </div>
+
+    <h3>1.3 Background and Surface Colors</h3>
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#0f0f18;"><span>#0F0F18</span></div>
+            <div class="swatch-label"><strong>Page Background</strong>Deep navy-black</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#161622;"><span>#161622</span></div>
+            <div class="swatch-label"><strong>Panel Background</strong>Card/panel surfaces</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#1e1e2e;"><span>#1E1E2E</span></div>
+            <div class="swatch-label"><strong>Elevated Surface</strong>Controls, dropdowns</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#2a2a3e;"><span>#2A2A3E</span></div>
+            <div class="swatch-label"><strong>Border / Divider</strong>Panel edges</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#3d3028;"><span>#3D3028</span></div>
+            <div class="swatch-label"><strong>Cup Rim</strong>Ceramic brown rim</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#2a2018;"><span>#2A2018</span></div>
+            <div class="swatch-label"><strong>Cup Outer Shadow</strong>Rim outer ring</div>
+        </div>
+    </div>
+
+    <h3>1.4 UI Accent Colors</h3>
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#c8956c;"><span>#C8956C</span></div>
+            <div class="swatch-label"><strong>Primary Accent</strong>Buttons, sliders, highlights</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#e8b88c;"><span>#E8B88C</span></div>
+            <div class="swatch-label"><strong>Accent Light</strong>Hover state, gradients</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#a07050;"><span>#A07050</span></div>
+            <div class="swatch-label"><strong>Accent Dark</strong>Active/pressed state</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#8b3a3a;"><span>#8B3A3A</span></div>
+            <div class="swatch-label"><strong>Danger / Reset</strong>Reset button</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#3a6b4a;"><span>#3A6B4A</span></div>
+            <div class="swatch-label"><strong>Success / Play</strong>Play button</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#4a5a8a;"><span>#4A5A8A</span></div>
+            <div class="swatch-label"><strong>Info / Secondary</strong>Toggle borders, info</div>
+        </div>
+    </div>
+
+    <h3>1.5 Graph / Chart Colors</h3>
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#e8b88c;"><span>#E8B88C</span></div>
+            <div class="swatch-label"><strong>Series 1: Concentration</strong>Warm amber line</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#7ec8e3;"><span>#7EC8E3</span></div>
+            <div class="swatch-label"><strong>Series 2: Dissolution Rate</strong>Cool cyan line</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#a8d8a0;"><span>#A8D8A0</span></div>
+            <div class="swatch-label"><strong>Series 3: Temperature</strong>Soft green line</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#d0a0e8;"><span>#D0A0E8</span></div>
+            <div class="swatch-label"><strong>Series 4: Saturation</strong>Lavender line</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#1a1a28;"><span>#1A1A28</span></div>
+            <div class="swatch-label"><strong>Graph Background</strong>Chart area fill</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#252538;"><span>#252538</span></div>
+            <div class="swatch-label"><strong>Grid Lines</strong>Subtle dashed guides</div>
+        </div>
+    </div>
+
+    <h3>1.6 Text Colors</h3>
+    <div class="palette-group">
+        <div class="swatch">
+            <div class="swatch-color" style="background:#FFFFFF;"><span style="color:#333;">#FFFFFF</span></div>
+            <div class="swatch-label"><strong>Heading Text</strong>Main titles only</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#E0E0E8;"><span style="color:#333;">#E0E0E8</span></div>
+            <div class="swatch-label"><strong>Body Text</strong>Primary readable text</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#A0A0B8;"><span style="color:#333;">#A0A0B8</span></div>
+            <div class="swatch-label"><strong>Secondary Text</strong>Labels, descriptions</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#6A6A82;"><span>#6A6A82</span></div>
+            <div class="swatch-label"><strong>Muted Text</strong>Units, footnotes</div>
+        </div>
+        <div class="swatch">
+            <div class="swatch-color" style="background:#c8956c;"><span>#C8956C</span></div>
+            <div class="swatch-label"><strong>Accent Text</strong>Values, highlights, links</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     SECTION 2: LAYOUT ARCHITECTURE
+     ============================================================ -->
+
+<div class="section">
+    <h2>2. Layout Architecture</h2>
+
+    <h3>2.1 Wireframe Overview</h3>
+    <div class="layout-diagram">
+        <div class="layout-title-bar">
+            TITLE BAR -- height: 64px -- "Disolucion del Azucar en Cafe"
+        </div>
+        <div class="layout-row">
+            <div class="layout-cell layout-left">
+                <div>
+                    <strong style="color:#c8956c;">CANVAS PANEL (60%)</strong><br><br>
+                    Coffee cup top-down view<br>
+                    Canvas element: fills container<br>
+                    min-height: 500px<br>
+                    Maintains 1:1 aspect ratio
+                </div>
+            </div>
+            <div class="layout-cell layout-right">
+                <div>
+                    <strong style="color:#7ec8e3;">CONTROLS + GRAPHS (40%)</strong><br><br>
+                    Temperature slider<br>
+                    Stirring speed slider<br>
+                    Sugar amount slider<br>
+                    Play / Pause / Reset<br>
+                    Speed control<br>
+                    Toggles<br>
+                    ------<br>
+                    Concentration graph<br>
+                    Dissolution rate graph
+                </div>
+            </div>
+        </div>
+        <div class="layout-bottom">
+            EQUATIONS BAR -- height: auto (min 80px) -- Scientific formulas (Noyes-Whitney, Fick's law)
+        </div>
+    </div>
+
+    <h3>2.2 CSS Grid Layout Specification</h3>
+    <div class="code-block"><span class="comment">/* Root layout container */</span>
+<span class="sel">.simulation-app</span> {
+    <span class="prop">display</span>: <span class="val">grid</span>;
+    <span class="prop">grid-template-rows</span>: <span class="val">64px 1fr auto</span>;
+    <span class="prop">grid-template-columns</span>: <span class="val">1fr</span>;
+    <span class="prop">min-height</span>: <span class="val">100vh</span>;
+    <span class="prop">background</span>: <span class="val">#0f0f18</span>;
+    <span class="prop">gap</span>: <span class="val">0</span>;
+}
+
+<span class="comment">/* Main content area: canvas + controls */</span>
+<span class="sel">.main-content</span> {
+    <span class="prop">display</span>: <span class="val">grid</span>;
+    <span class="prop">grid-template-columns</span>: <span class="val">3fr 2fr</span>;   <span class="comment">/* 60% / 40% */</span>
+    <span class="prop">gap</span>: <span class="val">1px</span>;
+    <span class="prop">background</span>: <span class="val">#2a2a3e</span>;             <span class="comment">/* gap acts as divider */</span>
+}
+
+<span class="comment">/* Mobile breakpoint: stack vertically */</span>
+<span class="sel">@media (max-width: 900px)</span> {
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr</span>;
+    }
+}
+
+<span class="comment">/* Tablet: give canvas more room */</span>
+<span class="sel">@media (min-width: 901px) and (max-width: 1200px)</span> {
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr 1fr</span>;  <span class="comment">/* 50/50 */</span>
+    }
+}</div>
+
+    <h3>2.3 Panel Specifications</h3>
+    <table>
+        <tr>
+            <th>Element</th>
+            <th>Property</th>
+            <th>Value</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td>Title Bar</td>
+            <td>height</td>
+            <td class="mono">64px</td>
+            <td>Fixed, does not scroll</td>
+        </tr>
+        <tr>
+            <td>Title Bar</td>
+            <td>background</td>
+            <td class="mono">#161622</td>
+            <td>With bottom border <code>#2a2a3e</code></td>
+        </tr>
+        <tr>
+            <td>Title Bar</td>
+            <td>padding</td>
+            <td class="mono">0 24px</td>
+            <td>Horizontal centering</td>
+        </tr>
+        <tr>
+            <td>Canvas Panel</td>
+            <td>padding</td>
+            <td class="mono">24px</td>
+            <td>All sides</td>
+        </tr>
+        <tr>
+            <td>Canvas Panel</td>
+            <td>background</td>
+            <td class="mono">#161622</td>
+            <td>Dark panel</td>
+        </tr>
+        <tr>
+            <td>Canvas Panel</td>
+            <td>min-height</td>
+            <td class="mono">500px</td>
+            <td>Desktop; 320px on mobile</td>
+        </tr>
+        <tr>
+            <td>Controls Panel</td>
+            <td>padding</td>
+            <td class="mono">20px</td>
+            <td>Scroll independently</td>
+        </tr>
+        <tr>
+            <td>Controls Panel</td>
+            <td>background</td>
+            <td class="mono">#161622</td>
+            <td>Matches canvas panel</td>
+        </tr>
+        <tr>
+            <td>Controls Panel</td>
+            <td>overflow-y</td>
+            <td class="mono">auto</td>
+            <td>Scrollable when content overflows</td>
+        </tr>
+        <tr>
+            <td>Equations Bar</td>
+            <td>padding</td>
+            <td class="mono">16px 24px</td>
+            <td>Compact bottom bar</td>
+        </tr>
+        <tr>
+            <td>Equations Bar</td>
+            <td>background</td>
+            <td class="mono">#12121e</td>
+            <td>Slightly darker than panels</td>
+        </tr>
+        <tr>
+            <td>Equations Bar</td>
+            <td>border-top</td>
+            <td class="mono">1px solid #2a2a3e</td>
+            <td>Separator line</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================
+     SECTION 3: COFFEE CUP VISUALIZATION
+     ============================================================ -->
+
+<div class="section">
+    <h2>3. Coffee Cup Visualization (Canvas)</h2>
+
+    <h3>3.1 Visual Reference</h3>
+    <div style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+        <div>
+            <div class="canvas-mock">
+                <div class="coffee-surface"></div>
+                <div class="highlight"></div>
+                <div class="cup-rim"></div>
+            </div>
+            <p style="text-align:center; color:#6a6a82; font-size:0.8rem; margin-top:0.5rem;">Top-down cup view (CSS approximation)</p>
+        </div>
+        <div style="flex:1; min-width:280px;">
+            <h3 style="margin-top:0;">Canvas Rendering Layers (back to front)</h3>
+            <table>
+                <tr><th>Z-order</th><th>Layer</th><th>Technique</th></tr>
+                <tr><td>0</td><td>Cup shadow (outer glow)</td><td><code>shadowBlur: 40, shadowColor: rgba(0,0,0,0.5)</code></td></tr>
+                <tr><td>1</td><td>Cup exterior ring</td><td><code>arc()</code> stroke, <code>#2a2018</code>, lineWidth 6</td></tr>
+                <tr><td>2</td><td>Cup rim</td><td><code>arc()</code> stroke, <code>#3d3028</code>, lineWidth 10</td></tr>
+                <tr><td>3</td><td>Coffee surface</td><td><code>createRadialGradient()</code>, 4-stop dynamic</td></tr>
+                <tr><td>4</td><td>Convection flow lines</td><td>Bezier curves, <code>rgba(255,220,180,0.06)</code></td></tr>
+                <tr><td>5</td><td>Concentration heatmap</td><td>Overlay with <code>globalCompositeOperation: 'overlay'</code></td></tr>
+                <tr><td>6</td><td>Sugar particles</td><td>Filled circles/rects with alpha fade</td></tr>
+                <tr><td>7</td><td>Stirring vortex</td><td>Spiral lines, rotating, low alpha</td></tr>
+                <tr><td>8</td><td>Surface highlight</td><td>Elliptical radial gradient, <code>rgba(255,220,180,0.12)</code></td></tr>
+                <tr><td>9</td><td>Steam particles</td><td>Rising circles with alpha fade + blur</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <h3>3.2 Coffee Surface Gradient</h3>
+    <div class="code-block"><span class="comment">/* Dynamic radial gradient -- center is lighter (surface reflection) */</span>
+<span class="comment">/* concentrationFactor ranges from 0.0 (pure coffee) to 1.0 (saturated) */</span>
+
+<span class="sel">function</span> drawCoffeeSurface(ctx, cx, cy, radius, concentrationFactor) {
+    const grad = ctx.<span class="prop">createRadialGradient</span>(
+        cx - radius * <span class="val">0.15</span>, cy - radius * <span class="val">0.15</span>, radius * <span class="val">0.05</span>,  <span class="comment">// inner (off-center highlight)</span>
+        cx, cy, radius                                                  <span class="comment">// outer (full cup)</span>
+    );
+
+    <span class="comment">// Interpolate colors based on concentration</span>
+    const darkEdge  = <span class="prop">lerpColor</span>(<span class="str">'#1a0f06'</span>, <span class="str">'#2a1a0c'</span>, concentrationFactor);
+    const midTone   = <span class="prop">lerpColor</span>(<span class="str">'#3e2510'</span>, <span class="str">'#5c3a1e'</span>, concentrationFactor);
+    const highlight = <span class="prop">lerpColor</span>(<span class="str">'#5c3a1e'</span>, <span class="str">'#8b5e3c'</span>, concentrationFactor);
+
+    grad.<span class="prop">addColorStop</span>(<span class="val">0.0</span>, highlight);      <span class="comment">// center highlight</span>
+    grad.<span class="prop">addColorStop</span>(<span class="val">0.35</span>, midTone);        <span class="comment">// mid-surface</span>
+    grad.<span class="prop">addColorStop</span>(<span class="val">0.7</span>, darkEdge);        <span class="comment">// approaching rim</span>
+    grad.<span class="prop">addColorStop</span>(<span class="val">1.0</span>, <span class="str">'#1a0f06'</span>);      <span class="comment">// darkest at rim</span>
+
+    ctx.fillStyle = grad;
+    ctx.<span class="prop">beginPath</span>();
+    ctx.<span class="prop">arc</span>(cx, cy, radius, <span class="val">0</span>, Math.PI * <span class="val">2</span>);
+    ctx.<span class="prop">fill</span>();
+}</div>
+
+    <h3>3.3 Concentration Gradient Visualization</h3>
+    <div class="callout">
+        The concentration gradient uses a secondary radial gradient overlaid on the coffee surface with <code>globalCompositeOperation: 'screen'</code>. Sugar dissolves outward from the cube position, creating a local "sweet zone" that spreads over time. This is visualized as a warm color bloom emanating from each sugar particle cluster.
+    </div>
+    <div class="code-block"><span class="comment">/* Concentration heatmap overlay per sugar source */</span>
+const heatGrad = ctx.<span class="prop">createRadialGradient</span>(
+    sugarX, sugarY, <span class="val">0</span>,
+    sugarX, sugarY, spreadRadius  <span class="comment">// grows over time</span>
+);
+heatGrad.<span class="prop">addColorStop</span>(<span class="val">0.0</span>, <span class="str">'rgba(200, 149, 108, 0.25)'</span>);   <span class="comment">// #C8956C at 25%</span>
+heatGrad.<span class="prop">addColorStop</span>(<span class="val">0.5</span>, <span class="str">'rgba(200, 149, 108, 0.08)'</span>);   <span class="comment">// fading</span>
+heatGrad.<span class="prop">addColorStop</span>(<span class="val">1.0</span>, <span class="str">'rgba(200, 149, 108, 0.0)'</span>);    <span class="comment">// fully transparent</span>
+
+ctx.<span class="prop">globalCompositeOperation</span> = <span class="str">'screen'</span>;
+ctx.fillStyle = heatGrad;
+ctx.<span class="prop">beginPath</span>();
+ctx.<span class="prop">arc</span>(sugarX, sugarY, spreadRadius, <span class="val">0</span>, Math.PI * <span class="val">2</span>);
+ctx.<span class="prop">fill</span>();
+ctx.<span class="prop">globalCompositeOperation</span> = <span class="str">'source-over'</span>;</div>
+
+    <h3>3.4 Convection / Stirring Flow Lines</h3>
+    <div class="code-block"><span class="comment">/* Flow lines: curved paths that rotate around the center */</span>
+<span class="comment">/* Visible only when stirring > 0 RPM */</span>
+
+<span class="sel">function</span> drawFlowLines(ctx, cx, cy, radius, angle, rpm) {
+    const lineCount = <span class="val">8</span>;
+    const opacity = Math.min(rpm / <span class="val">300</span>, <span class="val">1.0</span>) * <span class="val">0.12</span>;  <span class="comment">// max opacity 0.12</span>
+
+    ctx.<span class="prop">strokeStyle</span> = <span class="str">`rgba(255, 220, 180, ${opacity})`</span>;
+    ctx.<span class="prop">lineWidth</span> = <span class="val">1.5</span>;
+    ctx.<span class="prop">lineCap</span> = <span class="str">'round'</span>;
+
+    <span class="comment">// Draw spiral arms</span>
+    for (let i = <span class="val">0</span>; i < lineCount; i++) {
+        const startAngle = angle + (i / lineCount) * Math.PI * <span class="val">2</span>;
+        ctx.<span class="prop">beginPath</span>();
+        for (let r = radius * <span class="val">0.15</span>; r < radius * <span class="val">0.85</span>; r += <span class="val">2</span>) {
+            const theta = startAngle + (r / radius) * Math.PI * <span class="val">0.8</span>;
+            const x = cx + Math.cos(theta) * r;
+            const y = cy + Math.sin(theta) * r;
+            r === radius * <span class="val">0.15</span> ? ctx.<span class="prop">moveTo</span>(x, y) : ctx.<span class="prop">lineTo</span>(x, y);
+        }
+        ctx.<span class="prop">stroke</span>();
+    }
+}
+
+<span class="comment">/* Vortex center: a small spiral depression */</span>
+<span class="comment">/* Draw a tighter spiral near the center with slightly higher opacity */</span>
+ctx.<span class="prop">strokeStyle</span> = <span class="str">'rgba(26, 15, 6, 0.4)'</span>;   <span class="comment">// darker depression</span>
+ctx.<span class="prop">lineWidth</span> = <span class="val">2</span>;</div>
+
+    <h3>3.5 Steam Effect</h3>
+    <div class="code-block"><span class="comment">/* Steam particles rise from the coffee surface */</span>
+<span class="comment">/* Quantity and size scale with temperature */</span>
+
+<span class="sel">class</span> SteamParticle {
+    constructor(cx, cy, cupRadius) {
+        <span class="comment">// Random position within the top half of the cup</span>
+        const angle = Math.random() * Math.PI * <span class="val">2</span>;
+        const dist  = Math.random() * cupRadius * <span class="val">0.6</span>;
+        this.x     = cx + Math.cos(angle) * dist;
+        this.y     = cy + Math.sin(angle) * dist;
+        this.size  = <span class="val">2</span> + Math.random() * <span class="val">4</span>;            <span class="comment">// 2-6px</span>
+        this.alpha = <span class="val">0.08</span> + Math.random() * <span class="val">0.12</span>;     <span class="comment">// 0.08-0.20</span>
+        this.vx    = (Math.random() - <span class="val">0.5</span>) * <span class="val">0.3</span>;      <span class="comment">// slight drift</span>
+        this.vy    = <span class="val">-0.5</span> - Math.random() * <span class="val">1.0</span>;       <span class="comment">// rise speed</span>
+        this.life  = <span class="val">1.0</span>;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = <span class="str">`rgba(220, 210, 200, ${this.alpha * this.life})`</span>;
+        ctx.<span class="prop">beginPath</span>();
+        ctx.<span class="prop">arc</span>(this.x, this.y, this.size * (<span class="val">1</span> + (<span class="val">1</span> - this.life) * <span class="val">2</span>), <span class="val">0</span>, Math.PI * <span class="val">2</span>);
+        ctx.<span class="prop">fill</span>();
+    }
+}
+
+<span class="comment">/* Temperature controls spawn rate: */</span>
+<span class="comment">/* 60C -> 1 particle/frame, 95C -> 5 particles/frame */</span>
+const spawnRate = Math.floor((<span class="val">temp</span> - <span class="val">55</span>) / <span class="val">8</span>);</div>
+</div>
+
+<!-- ============================================================
+     SECTION 4: ANIMATION DETAILS
+     ============================================================ -->
+
+<div class="section">
+    <h2>4. Animation Details</h2>
+
+    <h3>4.1 Sugar Cube Drop Animation</h3>
+    <table>
+        <tr><th>Phase</th><th>Duration</th><th>Visual</th><th>Easing</th></tr>
+        <tr>
+            <td>1. Hover above cup</td>
+            <td>0ms (start)</td>
+            <td>Sugar cube (rect 20x20px) positioned 60px above cup center, white <code>#FFFFFF</code></td>
+            <td>--</td>
+        </tr>
+        <tr>
+            <td>2. Falling</td>
+            <td>400ms</td>
+            <td>Cube moves downward from y_start to coffee surface; slight rotation (15 degrees); grows shadow on coffee surface</td>
+            <td class="mono">cubic-bezier(0.4, 0, 0.9, 0.6)</td>
+        </tr>
+        <tr>
+            <td>3. Splash impact</td>
+            <td>200ms</td>
+            <td>4-6 small ripple circles expand outward from impact point; opacity 0.3 to 0; ring color <code>rgba(232,221,208,0.4)</code></td>
+            <td class="mono">ease-out</td>
+        </tr>
+        <tr>
+            <td>4. Cube settles</td>
+            <td>300ms</td>
+            <td>Cube slightly "sinks" (scale 1.0 to 0.85); begins to change color from <code>#FFFFFF</code> to <code>#F5F0E8</code></td>
+            <td class="mono">ease-in-out</td>
+        </tr>
+        <tr>
+            <td>5. Dissolving begins</td>
+            <td>ongoing</td>
+            <td>Particles detach from cube edges at random intervals; cube shrinks; see section 4.2</td>
+            <td>linear (physics-driven)</td>
+        </tr>
+    </table>
+
+    <h3>4.2 Particle Diffusion</h3>
+    <div class="code-block"><span class="comment">/* Each sugar particle has these animated properties */</span>
+<span class="sel">class</span> SugarParticle {
+    <span class="comment">// Visual properties</span>
+    radius:   <span class="val">1.5</span> to <span class="val">4</span> px       <span class="comment">// random, shrinks as dissolving</span>
+    color:    <span class="str">'#FFFFFF'</span>           <span class="comment">// transitions through sugar palette</span>
+    alpha:    <span class="val">1.0</span> to <span class="val">0.0</span>         <span class="comment">// fades out over dissolveTime</span>
+    shape:    <span class="str">'circle'</span> | <span class="str">'rect'</span>  <span class="comment">// rects for freshly broken, circles after rolling</span>
+
+    <span class="comment">// Physics properties</span>
+    dissolveTime: <span class="val">3000</span> to <span class="val">8000</span> ms  <span class="comment">// affected by temperature</span>
+    diffusionSpeed: <span class="val">0.2</span> to <span class="val">0.8</span> px/frame  <span class="comment">// Brownian-like random walk</span>
+
+    <span class="comment">// Movement: Brownian motion + convection</span>
+    dx = brownian() + convectionX * stirringFactor
+    dy = brownian() + convectionY * stirringFactor
+}
+
+<span class="comment">/* Particle spawn: 2-5 particles per frame detach from cube edges */</span>
+<span class="comment">/* Spawn positions: random point on cube perimeter */</span>
+<span class="comment">/* Initial velocity: outward from cube center + slight random */</span></div>
+
+    <h3>4.3 Color Change Timeline</h3>
+    <div class="callout">
+        The coffee color transitions happen in response to the actual dissolved sugar mass, not on a timer. As the simulation model calculates concentration, the coffee surface gradient shifts according to section 3.2. The transition is smooth (per-frame interpolation) and affects the entire radial gradient uniformly for unstirred coffee, or follows the convection pattern when stirring is active.
+    </div>
+    <table>
+        <tr><th>Concentration</th><th>Coffee Appearance</th><th>Center Hex</th><th>Edge Hex</th></tr>
+        <tr><td class="mono">0% (unsweetened)</td><td>Dark, pure coffee</td><td class="mono">#5C3A1E</td><td class="mono">#1A0F06</td></tr>
+        <tr><td class="mono">25%</td><td>Slightly warmer tone</td><td class="mono">#6B4828</td><td class="mono">#221408</td></tr>
+        <tr><td class="mono">50%</td><td>Noticeably lighter</td><td class="mono">#7A5632</td><td class="mono">#2A1A0C</td></tr>
+        <tr><td class="mono">75%</td><td>Warm brown</td><td class="mono">#8B5E3C</td><td class="mono">#3E2510</td></tr>
+        <tr><td class="mono">100% (saturated)</td><td>Rich caramel tint</td><td class="mono">#9A6C46</td><td class="mono">#5C3A1E</td></tr>
+    </table>
+
+    <h3>4.4 Stirring Vortex Animation</h3>
+    <table>
+        <tr><th>Property</th><th>Value at 0 RPM</th><th>Value at 150 RPM</th><th>Value at 300 RPM</th></tr>
+        <tr><td>Spiral arm count</td><td class="mono">0 (hidden)</td><td class="mono">6</td><td class="mono">10</td></tr>
+        <tr><td>Rotation speed</td><td class="mono">0 rad/frame</td><td class="mono">0.03 rad/frame</td><td class="mono">0.08 rad/frame</td></tr>
+        <tr><td>Vortex depth (center dark spot)</td><td class="mono">0px radius</td><td class="mono">8px radius</td><td class="mono">18px radius</td></tr>
+        <tr><td>Flow line opacity</td><td class="mono">0</td><td class="mono">0.06</td><td class="mono">0.12</td></tr>
+        <tr><td>Particle convection force</td><td class="mono">0</td><td class="mono">0.5x diffusion</td><td class="mono">2.0x diffusion</td></tr>
+    </table>
+
+    <h3>4.5 Temperature Visual Indicators</h3>
+    <table>
+        <tr><th>Temperature</th><th>Steam particles/frame</th><th>Steam max alpha</th><th>Steam rise speed</th><th>Surface shimmer</th></tr>
+        <tr><td class="mono">60 C</td><td class="mono">0-1</td><td class="mono">0.05</td><td class="mono">0.3 px/f</td><td>None</td></tr>
+        <tr><td class="mono">70 C</td><td class="mono">1-2</td><td class="mono">0.08</td><td class="mono">0.5 px/f</td><td>Subtle</td></tr>
+        <tr><td class="mono">80 C</td><td class="mono">2-3</td><td class="mono">0.12</td><td class="mono">0.8 px/f</td><td>Moderate</td></tr>
+        <tr><td class="mono">90 C</td><td class="mono">3-4</td><td class="mono">0.16</td><td class="mono">1.0 px/f</td><td>Visible ripples</td></tr>
+        <tr><td class="mono">95 C</td><td class="mono">4-5</td><td class="mono">0.20</td><td class="mono">1.2 px/f</td><td>Active shimmer</td></tr>
+    </table>
+</div>
+
+<!-- ============================================================
+     SECTION 5: UI CONTROLS DESIGN
+     ============================================================ -->
+
+<div class="section">
+    <h2>5. UI Controls Design</h2>
+
+    <h3>5.1 Slider Controls</h3>
+    <p>Three primary sliders control the simulation parameters. Each slider has a label, current value display, and unit.</p>
+
+    <div style="background:#161622; border-radius:12px; padding:24px; margin:1rem 0; max-width:340px;">
+        <div class="slider-mock">
+            <label><strong>Temperature</strong><span style="color:#c8956c;">78 C</span></label>
+            <div class="slider-track">
+                <div class="slider-fill" style="width:51%;"></div>
+                <div class="slider-thumb" style="left:49%;"></div>
+            </div>
+            <label><span>60 C</span><span>95 C</span></label>
+        </div>
+
+        <div class="slider-mock" style="margin-top:1.5rem;">
+            <label><strong>Stirring Speed</strong><span style="color:#c8956c;">120 RPM</span></label>
+            <div class="slider-track">
+                <div class="slider-fill" style="width:40%;"></div>
+                <div class="slider-thumb" style="left:38%;"></div>
+            </div>
+            <label><span>0 RPM</span><span>300 RPM</span></label>
+        </div>
+
+        <div class="slider-mock" style="margin-top:1.5rem;">
+            <label><strong>Sugar Amount</strong><span style="color:#c8956c;">2 cubes</span></label>
+            <div class="slider-track">
+                <div class="slider-fill" style="width:25%;"></div>
+                <div class="slider-thumb" style="left:23%;"></div>
+            </div>
+            <label><span>1</span><span>5</span></label>
+        </div>
+    </div>
+
+    <h3>5.2 Slider CSS Specification</h3>
+    <div class="code-block"><span class="comment">/* Custom range input styling */</span>
+<span class="sel">input[type="range"]</span> {
+    <span class="prop">-webkit-appearance</span>: <span class="val">none</span>;
+    <span class="prop">width</span>: <span class="val">100%</span>;
+    <span class="prop">height</span>: <span class="val">6px</span>;
+    <span class="prop">border-radius</span>: <span class="val">3px</span>;
+    <span class="prop">background</span>: <span class="val">#2a2a3e</span>;
+    <span class="prop">outline</span>: <span class="val">none</span>;
+    <span class="prop">margin</span>: <span class="val">8px 0</span>;
+}
+
+<span class="sel">input[type="range"]::-webkit-slider-thumb</span> {
+    <span class="prop">-webkit-appearance</span>: <span class="val">none</span>;
+    <span class="prop">width</span>: <span class="val">20px</span>;
+    <span class="prop">height</span>: <span class="val">20px</span>;
+    <span class="prop">border-radius</span>: <span class="val">50%</span>;
+    <span class="prop">background</span>: <span class="val">#FFFFFF</span>;
+    <span class="prop">cursor</span>: <span class="val">pointer</span>;
+    <span class="prop">box-shadow</span>: <span class="val">0 2px 6px rgba(0,0,0,0.3), 0 0 0 3px rgba(200,149,108,0.2)</span>;
+    <span class="prop">transition</span>: <span class="val">box-shadow 0.2s ease</span>;
+}
+
+<span class="sel">input[type="range"]::-webkit-slider-thumb:hover</span> {
+    <span class="prop">box-shadow</span>: <span class="val">0 2px 8px rgba(0,0,0,0.4), 0 0 0 5px rgba(200,149,108,0.3)</span>;
+}
+
+<span class="sel">input[type="range"]::-moz-range-thumb</span> {
+    <span class="prop">width</span>: <span class="val">20px</span>;
+    <span class="prop">height</span>: <span class="val">20px</span>;
+    <span class="prop">border-radius</span>: <span class="val">50%</span>;
+    <span class="prop">background</span>: <span class="val">#FFFFFF</span>;
+    <span class="prop">border</span>: <span class="val">none</span>;
+    <span class="prop">cursor</span>: <span class="val">pointer</span>;
+    <span class="prop">box-shadow</span>: <span class="val">0 2px 6px rgba(0,0,0,0.3)</span>;
+}
+
+<span class="comment">/* Filled track portion uses a linear-gradient trick or JS */</span>
+<span class="sel">input[type="range"]</span> {
+    <span class="prop">background</span>: <span class="val">linear-gradient(to right, #c8956c 0%, #c8956c var(--fill), #2a2a3e var(--fill), #2a2a3e 100%)</span>;
+}
+
+<span class="comment">/* Slider label row */</span>
+<span class="sel">.slider-label</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">justify-content</span>: <span class="val">space-between</span>;
+    <span class="prop">align-items</span>: <span class="val">baseline</span>;
+    <span class="prop">margin-bottom</span>: <span class="val">4px</span>;
+}
+
+<span class="sel">.slider-label .name</span> {
+    <span class="prop">font-size</span>: <span class="val">0.85rem</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+    <span class="prop">color</span>: <span class="val">#E0E0E8</span>;
+}
+
+<span class="sel">.slider-label .value</span> {
+    <span class="prop">font-family</span>: <span class="val">'JetBrains Mono', monospace</span>;
+    <span class="prop">font-size</span>: <span class="val">0.82rem</span>;
+    <span class="prop">color</span>: <span class="val">#C8956C</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+}
+
+<span class="sel">.slider-range</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">justify-content</span>: <span class="val">space-between</span>;
+    <span class="prop">font-size</span>: <span class="val">0.72rem</span>;
+    <span class="prop">color</span>: <span class="val">#6A6A82</span>;
+    <span class="prop">margin-top</span>: <span class="val">2px</span>;
+}</div>
+
+    <h3>5.3 Playback Buttons</h3>
+    <div style="background:#161622; border-radius:12px; padding:20px; margin:1rem 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <div class="btn-mock btn-primary" style="background:#3a6b4a; color:#d0f0d0;">&#9654; Play</div>
+        <div class="btn-mock btn-secondary">&#10074;&#10074; Pause</div>
+        <div class="btn-mock btn-danger">&#10226; Reset</div>
+        <div style="width:1px; height:32px; background:#2a2a3e; margin:0 8px;"></div>
+        <div class="btn-mock btn-secondary" style="font-family:'JetBrains Mono',monospace; font-size:0.78rem;">0.5x</div>
+        <div class="btn-mock btn-primary" style="font-family:'JetBrains Mono',monospace; font-size:0.78rem;">1x</div>
+        <div class="btn-mock btn-secondary" style="font-family:'JetBrains Mono',monospace; font-size:0.78rem;">2x</div>
+        <div class="btn-mock btn-secondary" style="font-family:'JetBrains Mono',monospace; font-size:0.78rem;">5x</div>
+    </div>
+
+    <h3>5.4 Button CSS Specification</h3>
+    <div class="code-block"><span class="comment">/* Playback control buttons */</span>
+<span class="sel">.btn</span> {
+    <span class="prop">display</span>: <span class="val">inline-flex</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">justify-content</span>: <span class="val">center</span>;
+    <span class="prop">gap</span>: <span class="val">6px</span>;
+    <span class="prop">padding</span>: <span class="val">10px 20px</span>;
+    <span class="prop">border-radius</span>: <span class="val">8px</span>;
+    <span class="prop">font-family</span>: <span class="val">'Inter', sans-serif</span>;
+    <span class="prop">font-size</span>: <span class="val">0.85rem</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+    <span class="prop">border</span>: <span class="val">1px solid transparent</span>;
+    <span class="prop">cursor</span>: <span class="val">pointer</span>;
+    <span class="prop">transition</span>: <span class="val">all 0.15s ease</span>;
+    <span class="prop">user-select</span>: <span class="val">none</span>;
+}
+
+<span class="sel">.btn-play</span> {
+    <span class="prop">background</span>: <span class="val">#3a6b4a</span>;
+    <span class="prop">color</span>: <span class="val">#d0f0d0</span>;
+}
+<span class="sel">.btn-play:hover</span> {
+    <span class="prop">background</span>: <span class="val">#4a7b5a</span>;
+    <span class="prop">box-shadow</span>: <span class="val">0 0 12px rgba(58,107,74,0.3)</span>;
+}
+
+<span class="sel">.btn-pause</span> {
+    <span class="prop">background</span>: <span class="val">#2a2a3a</span>;
+    <span class="prop">color</span>: <span class="val">#d0d0e0</span>;
+    <span class="prop">border-color</span>: <span class="val">#3a3a4a</span>;
+}
+<span class="sel">.btn-pause:hover</span> {
+    <span class="prop">background</span>: <span class="val">#353548</span>;
+}
+
+<span class="sel">.btn-reset</span> {
+    <span class="prop">background</span>: <span class="val">#8b3a3a</span>;
+    <span class="prop">color</span>: <span class="val">#f0d0d0</span>;
+}
+<span class="sel">.btn-reset:hover</span> {
+    <span class="prop">background</span>: <span class="val">#a04848</span>;
+    <span class="prop">box-shadow</span>: <span class="val">0 0 12px rgba(139,58,58,0.3)</span>;
+}
+
+<span class="comment">/* Speed buttons */</span>
+<span class="sel">.btn-speed</span> {
+    <span class="prop">padding</span>: <span class="val">6px 14px</span>;
+    <span class="prop">font-family</span>: <span class="val">'JetBrains Mono', monospace</span>;
+    <span class="prop">font-size</span>: <span class="val">0.78rem</span>;
+    <span class="prop">background</span>: <span class="val">#2a2a3a</span>;
+    <span class="prop">color</span>: <span class="val">#a0a0b8</span>;
+    <span class="prop">border-color</span>: <span class="val">#3a3a4a</span>;
+    <span class="prop">border-radius</span>: <span class="val">6px</span>;
+}
+<span class="sel">.btn-speed.active</span> {
+    <span class="prop">background</span>: <span class="val">#c8956c</span>;
+    <span class="prop">color</span>: <span class="val">#1a1018</span>;
+    <span class="prop">border-color</span>: <span class="val">#c8956c</span>;
+}</div>
+
+    <h3>5.5 Toggle Switches</h3>
+    <div style="background:#161622; border-radius:12px; padding:20px; margin:1rem 0; max-width:320px;">
+        <div class="toggle-mock">
+            <div class="toggle-switch on"></div>
+            <span>Show concentration gradient</span>
+        </div>
+        <div class="toggle-mock">
+            <div class="toggle-switch on"></div>
+            <span>Show flow lines</span>
+        </div>
+        <div class="toggle-mock">
+            <div class="toggle-switch"></div>
+            <span>Show particle trails</span>
+        </div>
+        <div class="toggle-mock">
+            <div class="toggle-switch on"></div>
+            <span>Show steam</span>
+        </div>
+        <div class="toggle-mock">
+            <div class="toggle-switch"></div>
+            <span>Debug: show particle count</span>
+        </div>
+    </div>
+
+    <div class="code-block"><span class="comment">/* Toggle switch CSS */</span>
+<span class="sel">.toggle-container</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">gap</span>: <span class="val">10px</span>;
+    <span class="prop">margin</span>: <span class="val">8px 0</span>;
+    <span class="prop">cursor</span>: <span class="val">pointer</span>;
+}
+
+<span class="sel">.toggle-track</span> {
+    <span class="prop">width</span>: <span class="val">40px</span>;
+    <span class="prop">height</span>: <span class="val">22px</span>;
+    <span class="prop">background</span>: <span class="val">#3a3a4a</span>;
+    <span class="prop">border-radius</span>: <span class="val">11px</span>;
+    <span class="prop">position</span>: <span class="val">relative</span>;
+    <span class="prop">transition</span>: <span class="val">background 0.2s ease</span>;
+    <span class="prop">flex-shrink</span>: <span class="val">0</span>;
+}
+
+<span class="sel">.toggle-track.active</span> {
+    <span class="prop">background</span>: <span class="val">#c8956c</span>;
+}
+
+<span class="sel">.toggle-knob</span> {
+    <span class="prop">width</span>: <span class="val">16px</span>;
+    <span class="prop">height</span>: <span class="val">16px</span>;
+    <span class="prop">background</span>: <span class="val">#FFFFFF</span>;
+    <span class="prop">border-radius</span>: <span class="val">50%</span>;
+    <span class="prop">position</span>: <span class="val">absolute</span>;
+    <span class="prop">top</span>: <span class="val">3px</span>;
+    <span class="prop">left</span>: <span class="val">3px</span>;
+    <span class="prop">transition</span>: <span class="val">left 0.2s ease</span>;
+    <span class="prop">box-shadow</span>: <span class="val">0 1px 3px rgba(0,0,0,0.3)</span>;
+}
+
+<span class="sel">.toggle-track.active .toggle-knob</span> {
+    <span class="prop">left</span>: <span class="val">21px</span>;
+}
+
+<span class="sel">.toggle-label</span> {
+    <span class="prop">font-size</span>: <span class="val">0.85rem</span>;
+    <span class="prop">color</span>: <span class="val">#A0A0B8</span>;
+}
+
+<span class="sel">.toggle-container:hover .toggle-label</span> {
+    <span class="prop">color</span>: <span class="val">#E0E0E8</span>;
+}</div>
+</div>
+
+<!-- ============================================================
+     SECTION 6: TYPOGRAPHY
+     ============================================================ -->
+
+<div class="section">
+    <h2>6. Typography</h2>
+
+    <h3>6.1 Font Stack</h3>
+    <table>
+        <tr><th>Role</th><th>Font Family</th><th>Weight(s)</th><th>Fallback Stack</th><th>Google Fonts URL</th></tr>
+        <tr>
+            <td>Main Title</td>
+            <td><strong style="font-family:'Playfair Display',serif;">Playfair Display</strong></td>
+            <td class="mono">700</td>
+            <td class="mono">Georgia, 'Times New Roman', serif</td>
+            <td class="mono" style="font-size:0.72rem;">fonts.googleapis.com/css2?family=Playfair+Display:wght@700</td>
+        </tr>
+        <tr>
+            <td>UI Text / Body</td>
+            <td><strong>Inter</strong></td>
+            <td class="mono">300, 400, 500, 600</td>
+            <td class="mono">system-ui, -apple-system, 'Segoe UI', sans-serif</td>
+            <td class="mono" style="font-size:0.72rem;">fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600</td>
+        </tr>
+        <tr>
+            <td>Values / Code / Equations</td>
+            <td><strong style="font-family:'JetBrains Mono',monospace;">JetBrains Mono</strong></td>
+            <td class="mono">400, 500</td>
+            <td class="mono">'Fira Code', 'Cascadia Code', 'Consolas', monospace</td>
+            <td class="mono" style="font-size:0.72rem;">fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500</td>
+        </tr>
+    </table>
+
+    <div class="callout">
+        <strong>Offline fallback:</strong> Since this is a self-contained HTML file, the Google Fonts link tag should be included but the fallback stacks must be robust. The simulation must remain fully functional and visually acceptable without the web fonts loading.
+    </div>
+
+    <h3>6.2 Type Scale</h3>
+    <table>
+        <tr><th>Element</th><th>Font</th><th>Size</th><th>Weight</th><th>Color</th><th>Letter Spacing</th><th>Line Height</th></tr>
+        <tr>
+            <td>Page title</td>
+            <td class="mono">Playfair Display</td>
+            <td class="mono">1.5rem (24px)</td>
+            <td class="mono">700</td>
+            <td><span class="chip" style="background:#fff;"></span><code>#FFFFFF</code></td>
+            <td class="mono">0.02em</td>
+            <td class="mono">1.3</td>
+        </tr>
+        <tr>
+            <td>Section header</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.95rem (15.2px)</td>
+            <td class="mono">600</td>
+            <td><span class="chip" style="background:#E0E0E8;"></span><code>#E0E0E8</code></td>
+            <td class="mono">0.03em</td>
+            <td class="mono">1.4</td>
+        </tr>
+        <tr>
+            <td>Slider label</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.85rem (13.6px)</td>
+            <td class="mono">500</td>
+            <td><span class="chip" style="background:#E0E0E8;"></span><code>#E0E0E8</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.4</td>
+        </tr>
+        <tr>
+            <td>Slider value</td>
+            <td class="mono">JetBrains Mono</td>
+            <td class="mono">0.82rem (13.1px)</td>
+            <td class="mono">500</td>
+            <td><span class="chip" style="background:#C8956C;"></span><code>#C8956C</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.2</td>
+        </tr>
+        <tr>
+            <td>Range min/max</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.72rem (11.5px)</td>
+            <td class="mono">400</td>
+            <td><span class="chip" style="background:#6A6A82;"></span><code>#6A6A82</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.3</td>
+        </tr>
+        <tr>
+            <td>Toggle label</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.85rem</td>
+            <td class="mono">400</td>
+            <td><span class="chip" style="background:#A0A0B8;"></span><code>#A0A0B8</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.4</td>
+        </tr>
+        <tr>
+            <td>Button text</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.85rem</td>
+            <td class="mono">500</td>
+            <td>Varies by button type</td>
+            <td class="mono">normal</td>
+            <td class="mono">1.2</td>
+        </tr>
+        <tr>
+            <td>Graph axis label</td>
+            <td class="mono">Inter</td>
+            <td class="mono">0.72rem</td>
+            <td class="mono">400</td>
+            <td><span class="chip" style="background:#6A6A82;"></span><code>#6A6A82</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.2</td>
+        </tr>
+        <tr>
+            <td>Graph tick values</td>
+            <td class="mono">JetBrains Mono</td>
+            <td class="mono">0.65rem (10.4px)</td>
+            <td class="mono">400</td>
+            <td><span class="chip" style="background:#6A6A82;"></span><code>#6A6A82</code></td>
+            <td class="mono">normal</td>
+            <td class="mono">1.0</td>
+        </tr>
+        <tr>
+            <td>Equation text</td>
+            <td class="mono">JetBrains Mono</td>
+            <td class="mono">0.88rem (14.1px)</td>
+            <td class="mono">400</td>
+            <td><span class="chip" style="background:#A0A0B8;"></span><code>#A0A0B8</code></td>
+            <td class="mono">0.01em</td>
+            <td class="mono">1.6</td>
+        </tr>
+        <tr>
+            <td>Equation variable</td>
+            <td class="mono">JetBrains Mono</td>
+            <td class="mono">0.88rem</td>
+            <td class="mono">500</td>
+            <td><span class="chip" style="background:#c8956c;"></span><code>#C8956C</code></td>
+            <td class="mono">0.01em</td>
+            <td class="mono">1.6</td>
+        </tr>
+    </table>
+
+    <h3>6.3 Mathematical Equations CSS (No MathJax)</h3>
+    <p>Equations are rendered using CSS and semantic HTML, avoiding external math rendering libraries. Fractions use flexbox, subscripts/superscripts use native HTML.</p>
+
+    <div class="code-block"><span class="comment">/* Equation rendering via CSS */</span>
+<span class="sel">.equation</span> {
+    <span class="prop">font-family</span>: <span class="val">'JetBrains Mono', monospace</span>;
+    <span class="prop">font-size</span>: <span class="val">0.88rem</span>;
+    <span class="prop">color</span>: <span class="val">#A0A0B8</span>;
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">gap</span>: <span class="val">6px</span>;
+    <span class="prop">flex-wrap</span>: <span class="val">wrap</span>;
+    <span class="prop">line-height</span>: <span class="val">1.6</span>;
+}
+
+<span class="sel">.eq-var</span> {
+    <span class="prop">color</span>: <span class="val">#C8956C</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+    <span class="prop">font-style</span>: <span class="val">italic</span>;
+}
+
+<span class="sel">.eq-frac</span> {
+    <span class="prop">display</span>: <span class="val">inline-flex</span>;
+    <span class="prop">flex-direction</span>: <span class="val">column</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">vertical-align</span>: <span class="val">middle</span>;
+    <span class="prop">margin</span>: <span class="val">0 4px</span>;
+}
+
+<span class="sel">.eq-frac .numerator</span> {
+    <span class="prop">border-bottom</span>: <span class="val">1px solid #6A6A82</span>;
+    <span class="prop">padding</span>: <span class="val">0 6px 2px</span>;
+    <span class="prop">font-size</span>: <span class="val">0.82rem</span>;
+}
+
+<span class="sel">.eq-frac .denominator</span> {
+    <span class="prop">padding</span>: <span class="val">2px 6px 0</span>;
+    <span class="prop">font-size</span>: <span class="val">0.82rem</span>;
+}
+
+<span class="sel">sub</span> { <span class="prop">font-size</span>: <span class="val">0.7em</span>; <span class="prop">color</span>: <span class="val">#7ec8e3</span>; }
+<span class="sel">sup</span> { <span class="prop">font-size</span>: <span class="val">0.7em</span>; }
+
+<span class="comment">/* Example HTML for Noyes-Whitney equation:
+   &lt;div class="equation"&gt;
+     &lt;span class="eq-frac"&gt;
+       &lt;span class="numerator"&gt;d&lt;span class="eq-var"&gt;m&lt;/span&gt;&lt;/span&gt;
+       &lt;span class="denominator"&gt;d&lt;span class="eq-var"&gt;t&lt;/span&gt;&lt;/span&gt;
+     &lt;/span&gt;
+     =
+     &lt;span class="eq-var"&gt;A&lt;/span&gt; &amp;middot;
+     &lt;span class="eq-frac"&gt;
+       &lt;span class="numerator"&gt;&lt;span class="eq-var"&gt;D&lt;/span&gt;&lt;/span&gt;
+       &lt;span class="denominator"&gt;&lt;span class="eq-var"&gt;h&lt;/span&gt;&lt;/span&gt;
+     &lt;/span&gt;
+     &amp;middot; (&lt;span class="eq-var"&gt;C&lt;sub&gt;s&lt;/sub&gt;&lt;/span&gt; - &lt;span class="eq-var"&gt;C&lt;sub&gt;t&lt;/sub&gt;&lt;/span&gt;)
+   &lt;/div&gt;
+*/</span></div>
+</div>
+
+<!-- ============================================================
+     SECTION 7: CHARTS / GRAPHS DESIGN
+     ============================================================ -->
+
+<div class="section">
+    <h2>7. Charts / Graphs Design</h2>
+
+    <h3>7.1 Graph Container</h3>
+    <p>Both graphs are rendered on their own HTML5 Canvas elements within styled container divs. They share a unified visual language.</p>
+
+    <div class="graph-mock">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="none">
+            <!-- Grid lines -->
+            <line x1="40" y1="10" x2="40" y2="135" stroke="#252538" stroke-width="1"/>
+            <line x1="40" y1="135" x2="390" y2="135" stroke="#252538" stroke-width="1"/>
+            <line x1="40" y1="100" x2="390" y2="100" stroke="#252538" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <line x1="40" y1="65" x2="390" y2="65" stroke="#252538" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <line x1="40" y1="30" x2="390" y2="30" stroke="#252538" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+            <!-- Series 1: Concentration (warm amber) -->
+            <polyline fill="none" stroke="#e8b88c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                points="40,130 80,120 120,105 160,85 200,68 240,55 280,47 320,42 360,39 390,38"/>
+            <!-- Fill under curve -->
+            <polygon fill="url(#grad1)" opacity="0.15"
+                points="40,130 80,120 120,105 160,85 200,68 240,55 280,47 320,42 360,39 390,38 390,135 40,135"/>
+
+            <!-- Series 2: Dissolution rate (cyan) -->
+            <polyline fill="none" stroke="#7ec8e3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6,3"
+                points="40,40 80,55 120,72 160,88 200,100 240,108 280,113 320,117 360,119 390,120"/>
+
+            <!-- Axis labels -->
+            <text x="215" y="148" fill="#6A6A82" font-size="9" text-anchor="middle" font-family="Inter, sans-serif">Time (s)</text>
+            <text x="12" y="75" fill="#6A6A82" font-size="9" text-anchor="middle" font-family="Inter, sans-serif" transform="rotate(-90, 12, 75)">Value</text>
+
+            <!-- Legend -->
+            <line x1="250" y1="15" x2="270" y2="15" stroke="#e8b88c" stroke-width="2"/>
+            <text x="275" y="18" fill="#A0A0B8" font-size="8" font-family="Inter, sans-serif">Concentration</text>
+            <line x1="250" y1="25" x2="270" y2="25" stroke="#7ec8e3" stroke-width="2" stroke-dasharray="4,2"/>
+            <text x="275" y="28" fill="#A0A0B8" font-size="8" font-family="Inter, sans-serif">Dissolution Rate</text>
+
+            <defs>
+                <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#e8b88c"/>
+                    <stop offset="100%" stop-color="#e8b88c" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+    <p style="text-align:center; color:#6a6a82; font-size:0.8rem;">Graph mockup: Concentration vs Time (SVG preview; actual uses Canvas)</p>
+
+    <h3>7.2 Graph Container CSS</h3>
+    <div class="code-block"><span class="sel">.graph-container</span> {
+    <span class="prop">background</span>: <span class="val">#1a1a28</span>;
+    <span class="prop">border</span>: <span class="val">1px solid #2a2a3e</span>;
+    <span class="prop">border-radius</span>: <span class="val">10px</span>;
+    <span class="prop">padding</span>: <span class="val">16px</span>;
+    <span class="prop">margin-bottom</span>: <span class="val">16px</span>;
+}
+
+<span class="sel">.graph-title</span> {
+    <span class="prop">font-family</span>: <span class="val">'Inter', sans-serif</span>;
+    <span class="prop">font-size</span>: <span class="val">0.82rem</span>;
+    <span class="prop">font-weight</span>: <span class="val">600</span>;
+    <span class="prop">color</span>: <span class="val">#E0E0E8</span>;
+    <span class="prop">margin-bottom</span>: <span class="val">10px</span>;
+    <span class="prop">letter-spacing</span>: <span class="val">0.02em</span>;
+}
+
+<span class="sel">.graph-canvas</span> {
+    <span class="prop">width</span>: <span class="val">100%</span>;
+    <span class="prop">height</span>: <span class="val">160px</span>;                 <span class="comment">/* fixed height */</span>
+    <span class="prop">display</span>: <span class="val">block</span>;
+    <span class="prop">image-rendering</span>: <span class="val">crisp-edges</span>;   <span class="comment">/* sharp lines */</span>
+}
+
+<span class="comment">/* Legend row below graph */</span>
+<span class="sel">.graph-legend</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">gap</span>: <span class="val">16px</span>;
+    <span class="prop">margin-top</span>: <span class="val">8px</span>;
+    <span class="prop">flex-wrap</span>: <span class="val">wrap</span>;
+}
+
+<span class="sel">.legend-item</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">gap</span>: <span class="val">6px</span>;
+    <span class="prop">font-size</span>: <span class="val">0.72rem</span>;
+    <span class="prop">color</span>: <span class="val">#A0A0B8</span>;
+}
+
+<span class="sel">.legend-swatch</span> {
+    <span class="prop">width</span>: <span class="val">20px</span>;
+    <span class="prop">height</span>: <span class="val">3px</span>;
+    <span class="prop">border-radius</span>: <span class="val">1.5px</span>;
+}</div>
+
+    <h3>7.3 Canvas Drawing Specifications</h3>
+    <table>
+        <tr><th>Element</th><th>Property</th><th>Value</th></tr>
+        <tr><td>Axes</td><td>strokeStyle / lineWidth</td><td class="mono">#252538 / 1px</td></tr>
+        <tr><td>Grid lines (horizontal)</td><td>strokeStyle / dashArray</td><td class="mono">#252538 / [4, 4]</td></tr>
+        <tr><td>Tick labels</td><td>font / fillStyle</td><td class="mono">10px JetBrains Mono / #6A6A82</td></tr>
+        <tr><td>Axis labels</td><td>font / fillStyle</td><td class="mono">11px Inter / #6A6A82</td></tr>
+        <tr><td>Data line (Series 1)</td><td>strokeStyle / lineWidth / lineCap</td><td class="mono">#E8B88C / 2px / round</td></tr>
+        <tr><td>Data line (Series 2)</td><td>strokeStyle / lineWidth / dashArray</td><td class="mono">#7EC8E3 / 2px / [6, 3]</td></tr>
+        <tr><td>Data line (Series 3)</td><td>strokeStyle / lineWidth / dashArray</td><td class="mono">#A8D8A0 / 1.5px / [2, 2]</td></tr>
+        <tr><td>Fill under curve</td><td>fillStyle / globalAlpha</td><td class="mono">linearGradient to transparent / 0.12</td></tr>
+        <tr><td>Current time marker</td><td>strokeStyle / lineWidth / dashArray</td><td class="mono">#C8956C / 1px / [3, 3]</td></tr>
+        <tr><td>Tooltip dot</td><td>fillStyle / radius</td><td class="mono">series color / 4px + 2px white border</td></tr>
+    </table>
+
+    <h3>7.4 Graph 1: Concentration vs Time</h3>
+    <ul>
+        <li><strong>X-axis:</strong> Time (seconds). Auto-scales 0 to elapsed. Tick marks every 10s for short runs, every 30s for longer.</li>
+        <li><strong>Y-axis:</strong> Concentration (g/L). Range 0 to C_sat (saturation). 5 grid lines.</li>
+        <li><strong>Line:</strong> Solid <span class="chip" style="background:#E8B88C;"></span><code>#E8B88C</code>, 2px. Approaches saturation asymptotically (exponential curve shape).</li>
+        <li><strong>Fill:</strong> Gradient fill beneath the line, <code>#E8B88C</code> at 12% opacity fading to transparent at the x-axis.</li>
+        <li><strong>Saturation line:</strong> Horizontal dashed line at C_sat, <span class="chip" style="background:#D0A0E8;"></span><code>#D0A0E8</code> at 40% opacity, labeled "Saturacion".</li>
+    </ul>
+
+    <h3>7.5 Graph 2: Dissolution Rate vs Time</h3>
+    <ul>
+        <li><strong>X-axis:</strong> Shared time scale with Graph 1 (synchronized scrolling).</li>
+        <li><strong>Y-axis:</strong> Rate dm/dt (g/s). Starts high, decays exponentially.</li>
+        <li><strong>Line:</strong> Dashed <span class="chip" style="background:#7EC8E3;"></span><code>#7EC8E3</code>, 2px, dashArray [6, 3]. Decaying curve.</li>
+        <li><strong>Fill:</strong> Gradient fill beneath, <code>#7EC8E3</code> at 10% opacity.</li>
+        <li><strong>Zero line:</strong> Thin solid line at y=0, <code>#252538</code>.</li>
+    </ul>
+
+    <h3>7.6 Data Series Color Reference</h3>
+    <table>
+        <tr><th>Series</th><th>Color</th><th>Line Style</th><th>Fill Alpha</th><th>Purpose</th></tr>
+        <tr>
+            <td>Concentration</td>
+            <td><span class="chip" style="background:#E8B88C;"></span><code>#E8B88C</code></td>
+            <td>Solid, 2px</td>
+            <td class="mono">0.12</td>
+            <td>Primary metric, always visible</td>
+        </tr>
+        <tr>
+            <td>Dissolution Rate</td>
+            <td><span class="chip" style="background:#7EC8E3;"></span><code>#7EC8E3</code></td>
+            <td>Dashed [6,3], 2px</td>
+            <td class="mono">0.10</td>
+            <td>Derivative of concentration</td>
+        </tr>
+        <tr>
+            <td>Temperature (if plotted)</td>
+            <td><span class="chip" style="background:#A8D8A0;"></span><code>#A8D8A0</code></td>
+            <td>Dotted [2,2], 1.5px</td>
+            <td class="mono">0.08</td>
+            <td>Optional overlay</td>
+        </tr>
+        <tr>
+            <td>Saturation Limit</td>
+            <td><span class="chip" style="background:#D0A0E8;"></span><code>#D0A0E8</code></td>
+            <td>Dashed [8,4], 1px</td>
+            <td class="mono">0</td>
+            <td>Reference horizontal line</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================
+     SECTION 8: EQUATIONS BAR
+     ============================================================ -->
+
+<div class="section">
+    <h2>8. Equations Bar Design</h2>
+
+    <h3>8.1 Content</h3>
+    <p>The bottom equations bar displays two key formulas with real-time variable substitution. Variables update dynamically as the simulation runs.</p>
+
+    <table>
+        <tr><th>Equation</th><th>Name</th><th>Variables Highlighted</th></tr>
+        <tr>
+            <td class="mono" style="color:#A0A0B8;">dm/dt = A * (D/h) * (C<sub style="color:#7ec8e3;">s</sub> - C<sub style="color:#7ec8e3;">t</sub>)</td>
+            <td>Noyes-Whitney</td>
+            <td>A (surface area), D (diffusion coeff.), h (boundary layer), C_s (saturation), C_t (current conc.)</td>
+        </tr>
+        <tr>
+            <td class="mono" style="color:#A0A0B8;">J = -D * (dC/dx)</td>
+            <td>Fick's First Law</td>
+            <td>J (flux), D (diffusion coeff.), dC/dx (concentration gradient)</td>
+        </tr>
+    </table>
+
+    <h3>8.2 Equations Bar CSS</h3>
+    <div class="code-block"><span class="sel">.equations-bar</span> {
+    <span class="prop">background</span>: <span class="val">#12121e</span>;
+    <span class="prop">border-top</span>: <span class="val">1px solid #2a2a3e</span>;
+    <span class="prop">padding</span>: <span class="val">16px 24px</span>;
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">flex-wrap</span>: <span class="val">wrap</span>;
+    <span class="prop">gap</span>: <span class="val">24px 48px</span>;
+    <span class="prop">justify-content</span>: <span class="val">center</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+}
+
+<span class="sel">.equation-block</span> {
+    <span class="prop">display</span>: <span class="val">flex</span>;
+    <span class="prop">flex-direction</span>: <span class="val">column</span>;
+    <span class="prop">align-items</span>: <span class="val">center</span>;
+    <span class="prop">gap</span>: <span class="val">4px</span>;
+}
+
+<span class="sel">.equation-name</span> {
+    <span class="prop">font-family</span>: <span class="val">'Inter', sans-serif</span>;
+    <span class="prop">font-size</span>: <span class="val">0.68rem</span>;
+    <span class="prop">color</span>: <span class="val">#6A6A82</span>;
+    <span class="prop">text-transform</span>: <span class="val">uppercase</span>;
+    <span class="prop">letter-spacing</span>: <span class="val">0.08em</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+}
+
+<span class="comment">/* Dynamic value injection: variables that update in real-time */</span>
+<span class="sel">.eq-live-value</span> {
+    <span class="prop">color</span>: <span class="val">#E8B88C</span>;
+    <span class="prop">font-weight</span>: <span class="val">500</span>;
+    <span class="prop">transition</span>: <span class="val">color 0.3s ease</span>;
+}
+
+<span class="sel">.eq-live-value.changing</span> {
+    <span class="prop">color</span>: <span class="val">#FFFFFF</span>;  <span class="comment">/* flash white when updating */</span>
+}</div>
+</div>
+
+<!-- ============================================================
+     SECTION 9: COMPLETE CSS VARIABLES
+     ============================================================ -->
+
+<div class="section">
+    <h2>9. Complete CSS Custom Properties (Design Tokens)</h2>
+
+    <p>All design values collected as CSS custom properties for the final simulation file. Copy this <code>:root</code> block directly into the HTML file.</p>
+
+    <div class="code-block"><span class="sel">:root</span> {
+    <span class="comment">/* ---- Coffee spectrum ---- */</span>
+    <span class="prop">--coffee-100</span>: <span class="val">#1a0f06</span>;   <span class="comment">/* espresso black */</span>
+    <span class="prop">--coffee-200</span>: <span class="val">#2a1a0c</span>;   <span class="comment">/* dark roast */</span>
+    <span class="prop">--coffee-300</span>: <span class="val">#3e2510</span>;   <span class="comment">/* french press */</span>
+    <span class="prop">--coffee-400</span>: <span class="val">#5c3a1e</span>;   <span class="comment">/* medium roast */</span>
+    <span class="prop">--coffee-500</span>: <span class="val">#8b5e3c</span>;   <span class="comment">/* light roast */</span>
+    <span class="prop">--coffee-600</span>: <span class="val">#b8845a</span>;   <span class="comment">/* cafe au lait */</span>
+    <span class="prop">--coffee-700</span>: <span class="val">#d4a574</span>;   <span class="comment">/* caramel */</span>
+
+    <span class="comment">/* ---- Sugar particle states ---- */</span>
+    <span class="prop">--sugar-solid</span>:      <span class="val">#FFFFFF</span>;
+    <span class="prop">--sugar-wet</span>:        <span class="val">#F5F0E8</span>;
+    <span class="prop">--sugar-dissolving</span>: <span class="val">#E8DDD0</span>;
+
+    <span class="comment">/* ---- Cup structure ---- */</span>
+    <span class="prop">--cup-rim</span>:          <span class="val">#3d3028</span>;
+    <span class="prop">--cup-outer</span>:        <span class="val">#2a2018</span>;
+
+    <span class="comment">/* ---- Background surfaces ---- */</span>
+    <span class="prop">--bg-page</span>:          <span class="val">#0f0f18</span>;
+    <span class="prop">--bg-panel</span>:         <span class="val">#161622</span>;
+    <span class="prop">--bg-elevated</span>:      <span class="val">#1e1e2e</span>;
+    <span class="prop">--bg-graph</span>:         <span class="val">#1a1a28</span>;
+    <span class="prop">--bg-equation</span>:      <span class="val">#12121e</span>;
+    <span class="prop">--border</span>:           <span class="val">#2a2a3e</span>;
+
+    <span class="comment">/* ---- Accent / interactive ---- */</span>
+    <span class="prop">--accent</span>:           <span class="val">#c8956c</span>;
+    <span class="prop">--accent-light</span>:     <span class="val">#e8b88c</span>;
+    <span class="prop">--accent-dark</span>:      <span class="val">#a07050</span>;
+    <span class="prop">--danger</span>:           <span class="val">#8b3a3a</span>;
+    <span class="prop">--success</span>:          <span class="val">#3a6b4a</span>;
+    <span class="prop">--info</span>:             <span class="val">#4a5a8a</span>;
+
+    <span class="comment">/* ---- Graph series ---- */</span>
+    <span class="prop">--series-concentration</span>: <span class="val">#e8b88c</span>;
+    <span class="prop">--series-rate</span>:          <span class="val">#7ec8e3</span>;
+    <span class="prop">--series-temperature</span>:   <span class="val">#a8d8a0</span>;
+    <span class="prop">--series-saturation</span>:    <span class="val">#d0a0e8</span>;
+    <span class="prop">--graph-grid</span>:           <span class="val">#252538</span>;
+
+    <span class="comment">/* ---- Text hierarchy ---- */</span>
+    <span class="prop">--text-heading</span>:     <span class="val">#FFFFFF</span>;
+    <span class="prop">--text-body</span>:        <span class="val">#E0E0E8</span>;
+    <span class="prop">--text-secondary</span>:   <span class="val">#A0A0B8</span>;
+    <span class="prop">--text-muted</span>:       <span class="val">#6A6A82</span>;
+    <span class="prop">--text-accent</span>:      <span class="val">#C8956C</span>;
+
+    <span class="comment">/* ---- Typography ---- */</span>
+    <span class="prop">--font-display</span>:     <span class="val">'Playfair Display', Georgia, serif</span>;
+    <span class="prop">--font-body</span>:        <span class="val">'Inter', system-ui, -apple-system, sans-serif</span>;
+    <span class="prop">--font-mono</span>:        <span class="val">'JetBrains Mono', 'Fira Code', 'Consolas', monospace</span>;
+
+    <span class="comment">/* ---- Spacing scale (4px base) ---- */</span>
+    <span class="prop">--space-1</span>:  <span class="val">4px</span>;
+    <span class="prop">--space-2</span>:  <span class="val">8px</span>;
+    <span class="prop">--space-3</span>:  <span class="val">12px</span>;
+    <span class="prop">--space-4</span>:  <span class="val">16px</span>;
+    <span class="prop">--space-5</span>:  <span class="val">20px</span>;
+    <span class="prop">--space-6</span>:  <span class="val">24px</span>;
+    <span class="prop">--space-8</span>:  <span class="val">32px</span>;
+    <span class="prop">--space-10</span>: <span class="val">40px</span>;
+    <span class="prop">--space-12</span>: <span class="val">48px</span>;
+
+    <span class="comment">/* ---- Border radius ---- */</span>
+    <span class="prop">--radius-sm</span>:  <span class="val">4px</span>;
+    <span class="prop">--radius-md</span>:  <span class="val">8px</span>;
+    <span class="prop">--radius-lg</span>:  <span class="val">12px</span>;
+    <span class="prop">--radius-xl</span>:  <span class="val">16px</span>;
+    <span class="prop">--radius-full</span>: <span class="val">9999px</span>;
+
+    <span class="comment">/* ---- Shadows ---- */</span>
+    <span class="prop">--shadow-sm</span>:   <span class="val">0 1px 3px rgba(0,0,0,0.3)</span>;
+    <span class="prop">--shadow-md</span>:   <span class="val">0 4px 12px rgba(0,0,0,0.4)</span>;
+    <span class="prop">--shadow-lg</span>:   <span class="val">0 8px 24px rgba(0,0,0,0.5)</span>;
+    <span class="prop">--shadow-glow</span>: <span class="val">0 0 20px rgba(200,149,108,0.15)</span>;
+
+    <span class="comment">/* ---- Transitions ---- */</span>
+    <span class="prop">--transition-fast</span>:   <span class="val">0.15s ease</span>;
+    <span class="prop">--transition-normal</span>: <span class="val">0.25s ease</span>;
+    <span class="prop">--transition-slow</span>:   <span class="val">0.4s ease</span>;
+
+    <span class="comment">/* ---- Layout breakpoints (for reference, used in media queries) ---- */</span>
+    <span class="comment">/* Mobile:  max-width 600px  -- single column, stacked              */</span>
+    <span class="comment">/* Tablet:  601-900px        -- single column, compact controls     */</span>
+    <span class="comment">/* Desktop: 901-1200px       -- 50/50 split                         */</span>
+    <span class="comment">/* Wide:    1201px+           -- 60/40 split (canonical)              */</span>
+
+    <span class="comment">/* ---- Canvas dimensions ---- */</span>
+    <span class="prop">--canvas-min-size</span>: <span class="val">320px</span>;
+    <span class="prop">--canvas-max-size</span>: <span class="val">600px</span>;
+    <span class="prop">--graph-height</span>:    <span class="val">160px</span>;
+}</div>
+</div>
+
+<!-- ============================================================
+     SECTION 10: RESPONSIVE BREAKPOINTS
+     ============================================================ -->
+
+<div class="section">
+    <h2>10. Responsive Design Breakpoints</h2>
+
+    <div class="code-block"><span class="comment">/* ---- MOBILE (max-width: 600px) ---- */</span>
+<span class="sel">@media (max-width: 600px)</span> {
+    <span class="sel">.simulation-app</span> {
+        <span class="prop">grid-template-rows</span>: <span class="val">52px 1fr auto auto</span>;
+    }
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr</span>;
+    }
+    <span class="sel">.title-bar h1</span> {
+        <span class="prop">font-size</span>: <span class="val">1.1rem</span>;
+    }
+    <span class="sel">.canvas-panel</span> {
+        <span class="prop">min-height</span>: <span class="val">320px</span>;
+        <span class="prop">padding</span>: <span class="val">12px</span>;
+    }
+    <span class="sel">.controls-panel</span> {
+        <span class="prop">padding</span>: <span class="val">16px</span>;
+    }
+    <span class="sel">.equations-bar</span> {
+        <span class="prop">flex-direction</span>: <span class="val">column</span>;
+        <span class="prop">gap</span>: <span class="val">12px</span>;
+        <span class="prop">padding</span>: <span class="val">12px 16px</span>;
+    }
+    <span class="sel">.equation</span> {
+        <span class="prop">font-size</span>: <span class="val">0.75rem</span>;
+    }
+    <span class="sel">.graph-canvas</span> {
+        <span class="prop">height</span>: <span class="val">120px</span>;
+    }
+}
+
+<span class="comment">/* ---- TABLET (601-900px) ---- */</span>
+<span class="sel">@media (min-width: 601px) and (max-width: 900px)</span> {
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr</span>;
+    }
+    <span class="sel">.controls-panel</span> {
+        <span class="prop">display</span>: <span class="val">grid</span>;
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr 1fr</span>;
+        <span class="prop">gap</span>: <span class="val">16px</span>;
+    }
+}
+
+<span class="comment">/* ---- DESKTOP (901-1200px) ---- */</span>
+<span class="sel">@media (min-width: 901px) and (max-width: 1200px)</span> {
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">1fr 1fr</span>;
+    }
+}
+
+<span class="comment">/* ---- WIDE (1201px+) ---- */</span>
+<span class="sel">@media (min-width: 1201px)</span> {
+    <span class="sel">.main-content</span> {
+        <span class="prop">grid-template-columns</span>: <span class="val">3fr 2fr</span>;
+    }
+}</div>
+</div>
+
+<!-- ============================================================
+     SECTION 11: INTERACTION STATES
+     ============================================================ -->
+
+<div class="section">
+    <h2>11. Interaction States and Micro-animations</h2>
+
+    <table>
+        <tr><th>Element</th><th>State</th><th>CSS Change</th><th>Transition</th></tr>
+        <tr>
+            <td>Button (any)</td>
+            <td>Hover</td>
+            <td>Background lightens 10%; subtle glow shadow appears</td>
+            <td class="mono">0.15s ease</td>
+        </tr>
+        <tr>
+            <td>Button (any)</td>
+            <td>Active / Pressed</td>
+            <td>Background darkens 5%; transform: scale(0.97)</td>
+            <td class="mono">0.08s ease</td>
+        </tr>
+        <tr>
+            <td>Button (any)</td>
+            <td>Disabled</td>
+            <td>opacity: 0.4; cursor: not-allowed</td>
+            <td>--</td>
+        </tr>
+        <tr>
+            <td>Slider thumb</td>
+            <td>Hover</td>
+            <td>Glow ring expands (box-shadow 3px to 5px)</td>
+            <td class="mono">0.2s ease</td>
+        </tr>
+        <tr>
+            <td>Slider thumb</td>
+            <td>Active / Dragging</td>
+            <td>Glow ring at 7px; thumb scale(1.1)</td>
+            <td class="mono">0.1s ease</td>
+        </tr>
+        <tr>
+            <td>Toggle switch</td>
+            <td>Toggle on/off</td>
+            <td>Knob slides left/right 18px; track changes color</td>
+            <td class="mono">0.2s ease</td>
+        </tr>
+        <tr>
+            <td>Speed button</td>
+            <td>Active (selected)</td>
+            <td>Background: accent; color: dark; border-color: accent</td>
+            <td class="mono">0.15s ease</td>
+        </tr>
+        <tr>
+            <td>Graph tooltip</td>
+            <td>Mouse hover on graph</td>
+            <td>Vertical dashed line at cursor X; dot on each series line; value tooltip appears above</td>
+            <td class="mono">0s (instant)</td>
+        </tr>
+        <tr>
+            <td>Canvas (coffee cup)</td>
+            <td>Click to drop sugar</td>
+            <td>Sugar cube appears and drops to click position (if within cup)</td>
+            <td>400ms fall animation</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================
+     SECTION 12: ACCESSIBILITY
+     ============================================================ -->
+
+<div class="section">
+    <h2>12. Accessibility Considerations</h2>
+
+    <ul>
+        <li><strong>Contrast ratios:</strong> All text colors on their respective backgrounds meet WCAG AA (4.5:1 for normal text, 3:1 for large text).
+            <ul>
+                <li><code>#E0E0E8</code> on <code>#161622</code> = 11.2:1 (passes AAA)</li>
+                <li><code>#A0A0B8</code> on <code>#161622</code> = 6.8:1 (passes AA)</li>
+                <li><code>#6A6A82</code> on <code>#161622</code> = 3.6:1 (passes AA for large text / non-text elements)</li>
+                <li><code>#C8956C</code> on <code>#161622</code> = 5.2:1 (passes AA)</li>
+            </ul>
+        </li>
+        <li><strong>Focus indicators:</strong> All interactive elements (buttons, sliders, toggles) show a <code>2px solid #C8956C</code> outline with <code>2px offset</code> on <code>:focus-visible</code>.</li>
+        <li><strong>Keyboard navigation:</strong> Tab order follows: sliders (top to bottom), playback buttons (left to right), speed buttons, toggles, then graph area.</li>
+        <li><strong>ARIA labels:</strong> Canvas elements need <code>role="img"</code> with <code>aria-label</code> describing current state. Sliders use native <code>&lt;input type="range"&gt;</code> with <code>aria-valuemin</code>, <code>aria-valuemax</code>, <code>aria-valuenow</code>, and <code>aria-label</code>.</li>
+        <li><strong>Reduced motion:</strong> Respect <code>prefers-reduced-motion: reduce</code> by pausing steam, disabling particle trails, and using instant transitions instead of animations.</li>
+    </ul>
+
+    <div class="code-block"><span class="sel">@media (prefers-reduced-motion: reduce)</span> {
+    <span class="sel">*</span> {
+        <span class="prop">animation-duration</span>: <span class="val">0.01ms !important</span>;
+        <span class="prop">transition-duration</span>: <span class="val">0.01ms !important</span>;
+    }
+    <span class="comment">/* In JS: check window.matchMedia('(prefers-reduced-motion: reduce)').matches */</span>
+    <span class="comment">/* If true: disable steam, reduce particle count to 1/4, skip drop animation */</span>
+}
+
+<span class="sel">:focus-visible</span> {
+    <span class="prop">outline</span>: <span class="val">2px solid #C8956C</span>;
+    <span class="prop">outline-offset</span>: <span class="val">2px</span>;
+}</div>
+</div>
+
+<!-- ============================================================
+     SECTION 13: FILE STRUCTURE
+     ============================================================ -->
+
+<div class="section">
+    <h2>13. Single-File HTML Structure</h2>
+
+    <p>The final simulation is a single self-contained HTML file with this internal organization:</p>
+
+    <div class="code-block"><span class="comment">&lt;!-- File structure outline --&gt;</span>
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="es"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Disolucion del Azucar en Cafe -- Simulacion Interactiva&lt;/title&gt;
+    &lt;link href="Google Fonts URL" rel="stylesheet"&gt;
+    &lt;style&gt;
+        <span class="comment">/* 1. CSS Custom Properties (:root)         ~50 lines */</span>
+        <span class="comment">/* 2. Reset and base styles                 ~30 lines */</span>
+        <span class="comment">/* 3. Layout (grid, panels)                  ~60 lines */</span>
+        <span class="comment">/* 4. Title bar                              ~20 lines */</span>
+        <span class="comment">/* 5. Canvas panel                           ~15 lines */</span>
+        <span class="comment">/* 6. Controls panel (sliders, buttons, etc) ~120 lines */</span>
+        <span class="comment">/* 7. Graph containers                       ~40 lines */</span>
+        <span class="comment">/* 8. Equations bar                          ~30 lines */</span>
+        <span class="comment">/* 9. Interaction states                     ~40 lines */</span>
+        <span class="comment">/* 10. Responsive breakpoints                ~60 lines */</span>
+        <span class="comment">/* 11. Accessibility / reduced motion         ~15 lines */</span>
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    <span class="comment">&lt;!-- A. Title bar --&gt;</span>
+    <span class="comment">&lt;!-- B. Main content grid --&gt;</span>
+        <span class="comment">&lt;!-- B1. Canvas panel with &lt;canvas&gt; --&gt;</span>
+        <span class="comment">&lt;!-- B2. Controls panel --&gt;</span>
+            <span class="comment">&lt;!-- B2a. Sliders --&gt;</span>
+            <span class="comment">&lt;!-- B2b. Playback buttons --&gt;</span>
+            <span class="comment">&lt;!-- B2c. Speed control --&gt;</span>
+            <span class="comment">&lt;!-- B2d. Toggles --&gt;</span>
+            <span class="comment">&lt;!-- B2e. Graph containers (each with own &lt;canvas&gt;) --&gt;</span>
+    <span class="comment">&lt;!-- C. Equations bar --&gt;</span>
+
+    &lt;script&gt;
+        <span class="comment">/* 1. Constants and configuration            ~50 lines */</span>
+        <span class="comment">/* 2. Physics model (Noyes-Whitney)          ~80 lines */</span>
+        <span class="comment">/* 3. Particle system (sugar + steam)        ~150 lines */</span>
+        <span class="comment">/* 4. Canvas renderer (cup, particles, etc)  ~200 lines */</span>
+        <span class="comment">/* 5. Graph renderer                         ~120 lines */</span>
+        <span class="comment">/* 6. UI event handlers                      ~80 lines */</span>
+        <span class="comment">/* 7. Animation loop (requestAnimationFrame) ~40 lines */</span>
+        <span class="comment">/* 8. Initialization                         ~30 lines */</span>
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</div>
+</div>
+
+<p style="text-align:center; color:#6A6A82; margin-top:3rem; padding-bottom:2rem; font-size:0.82rem;">
+    End of Design Specification -- Version 1.0
+</p>
+
+</body>
+</html>
