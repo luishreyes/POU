@@ -692,8 +692,13 @@ function updateConcField(dt) {
 // PARTICLE SYSTEMS
 // =====================================================
 
+// Cluster center tracks where the sugar cube drifts (centrifugal + rotation)
+var clusterCx = 0.5, clusterCy = 0.5;
+
 function createSugarParticles() {
   sugarParticles = [];
+  clusterCx = 0.5;
+  clusterCy = 0.5;
   var total = numCubes * PARTICLE_COUNT_PER_CUBE;
   for (var i = 0; i < total; i++) {
     var cubeIdx = Math.floor(i / PARTICLE_COUNT_PER_CUBE);
@@ -720,7 +725,8 @@ function updateSugarParticles(dt) {
   if (sugarParticles.length === 0) return;
   var pctDiss = totalMass0 > 0 ? dissolvedMass / totalMass0 : 0;
   var targetDiss = Math.floor(pctDiss * sugarParticles.length);
-  var cx = 0.5, cy = 0.5;
+  var cupCx = 0.5, cupCy = 0.5;
+  var cupLimit = 0.42;
 
   // Count currently dissolved
   var dissCount = 0;
@@ -728,15 +734,15 @@ function updateSugarParticles(dt) {
     if (sugarParticles[i].dissolved) dissCount++;
   }
 
-  // Dissolve outer particles first
+  // Dissolve outer particles first (relative to cluster center)
   if (targetDiss > dissCount) {
     var remaining = [];
     for (var i = 0; i < sugarParticles.length; i++) {
       if (!sugarParticles[i].dissolved) remaining.push(sugarParticles[i]);
     }
     remaining.sort(function(a, b) {
-      var da = (a.x - cx) * (a.x - cx) + (a.y - cy) * (a.y - cy);
-      var db = (b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy);
+      var da = (a.x - clusterCx) * (a.x - clusterCx) + (a.y - clusterCy) * (a.y - clusterCy);
+      var db = (b.x - clusterCx) * (b.x - clusterCx) + (b.y - clusterCy) * (b.y - clusterCy);
       return db - da;
     });
     var need = targetDiss - dissCount;
@@ -750,14 +756,42 @@ function updateSugarParticles(dt) {
   var omega = rpm > 0 ? (2 * Math.PI * rpm / 60) * 0.7 : 0;
   var diffScale = Dsucrose(temperature) / Dsucrose(80);
 
+  // === Move cluster center: tangential orbit + centrifugal outward drift ===
+  if (omega > 0) {
+    var cdx = clusterCx - cupCx;
+    var cdy = clusterCy - cupCy;
+    var cDist = Math.sqrt(cdx * cdx + cdy * cdy);
+    if (cDist < 0.001) { cDist = 0.001; cdx = 0.001; cdy = 0; }
+    var cnx = cdx / cDist;
+    var cny = cdy / cDist;
+    // Tangential orbit
+    clusterCx += (-cny) * omega * 0.004 * dt;
+    clusterCy += cnx * omega * 0.004 * dt;
+    // Centrifugal outward push (stronger than individual particles)
+    var cfCluster = omega * omega * Math.max(cDist, 0.02) * 0.003;
+    clusterCx += cnx * cfCluster * dt;
+    clusterCy += cny * cfCluster * dt;
+    // Confine cluster center to cup
+    var clDist = Math.sqrt((clusterCx - cupCx) * (clusterCx - cupCx) + (clusterCy - cupCy) * (clusterCy - cupCy));
+    if (clDist > cupLimit - 0.08) {
+      clusterCx = cupCx + (clusterCx - cupCx) / clDist * (cupLimit - 0.08);
+      clusterCy = cupCy + (clusterCy - cupCy) / clDist * (cupLimit - 0.08);
+    }
+  } else {
+    // Without stirring, cluster drifts back toward cup center (gravity settling)
+    clusterCx += (cupCx - clusterCx) * 0.3 * dt;
+    clusterCy += (cupCy - clusterCy) * 0.3 * dt;
+  }
+
   for (var i = 0; i < sugarParticles.length; i++) {
     var p = sugarParticles[i];
-    var dx = p.x - cx;
-    var dy = p.y - cy;
-    var dist = Math.sqrt(dx * dx + dy * dy);
 
     if (p.dissolved) {
       p.dissolveTime += dt;
+      var dx = p.x - cupCx;
+      var dy = p.y - cupCy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.001) dist = 0.001;
 
       // Brownian motion
       p.brownPhase += dt * 2.5;
@@ -782,7 +816,7 @@ function updateSugarParticles(dt) {
         p.x += tx * ss * dt;
         p.y += ty * ss * dt;
         // Radial outward: centrifugal (F_cf ~ omega^2 * r)
-        var cf = omega * omega * dist * 0.0015;
+        var cf = omega * omega * dist * 0.003;
         p.x += rx * cf * dt;
         p.y += ry * cf * dt;
       }
@@ -798,35 +832,33 @@ function updateSugarParticles(dt) {
       p.cb = Math.round(220 - fade * (220 - 35));
 
       // Confine to cup
-      var pd = Math.sqrt((p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy));
-      if (pd > 0.42) {
-        p.x = cx + (p.x - cx) / pd * 0.41;
-        p.y = cy + (p.y - cy) / pd * 0.41;
+      var pd = Math.sqrt((p.x - cupCx) * (p.x - cupCx) + (p.y - cupCy) * (p.y - cupCy));
+      if (pd > cupLimit) {
+        p.x = cupCx + (p.x - cupCx) / pd * (cupLimit - 0.01);
+        p.y = cupCy + (p.y - cupCy) / pd * (cupLimit - 0.01);
       }
 
     } else {
-      // Undissolved: keep clustered, shrink cluster with mass
-      var clR = 0.07 * Math.pow(Math.max(0.01, currentMass / totalMass0), 1 / 3);
-      if (dist > clR && dist > 0.002) {
-        p.x -= (dx / dist) * 0.0008;
-        p.y -= (dy / dist) * 0.0008;
-      }
-      if (omega > 0 && dist > 0.008) {
-        var tx = -dy / dist;
-        var ty = dx / dist;
-        var rx = dx / dist;
-        var ry = dy / dist;
-        // Tangential: rotation
-        p.x += tx * omega * 0.003 * dt;
-        p.y += ty * omega * 0.003 * dt;
-        // Radial outward: centrifugal (sugar denser than coffee)
-        var cf = omega * omega * dist * 0.001;
-        p.x += rx * cf * dt;
-        p.y += ry * cf * dt;
+      // Undissolved: cluster around the moving cluster center
+      var dx = p.x - clusterCx;
+      var dy = p.y - clusterCy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.001) dist = 0.001;
+      var clR = 0.06 * Math.pow(Math.max(0.01, currentMass / totalMass0), 1 / 3);
+      // Pull toward cluster center
+      if (dist > clR) {
+        p.x -= (dx / dist) * 0.002;
+        p.y -= (dy / dist) * 0.002;
       }
       // Jitter
       p.x += (Math.random() - 0.5) * 0.0008;
       p.y += (Math.random() - 0.5) * 0.0008;
+      // Confine to cup
+      var pd2 = Math.sqrt((p.x - cupCx) * (p.x - cupCx) + (p.y - cupCy) * (p.y - cupCy));
+      if (pd2 > cupLimit) {
+        p.x = cupCx + (p.x - cupCx) / pd2 * (cupLimit - 0.01);
+        p.y = cupCy + (p.y - cupCy) / pd2 * (cupLimit - 0.01);
+      }
     }
   }
 }
@@ -1499,6 +1531,7 @@ function setupControls() {
     concentration = 0; dissRate = 0; currentRadius = R0; dropProgress = 0;
     hist = { t: [], pct: [], rate: [], conc: [] };
     sugarParticles = []; steamParticles = []; cubes = [];
+    clusterCx = 0.5; clusterCy = 0.5;
     initConcField();
     hideSummary();
     updateStateLabel();
