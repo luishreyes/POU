@@ -771,13 +771,20 @@ function updateSugarParticles(dt) {
         p.y += (dy / dist) * driftS * dt * 8;
       }
 
-      // Circular convection from stirring
+      // Circular convection + centrifugal force from stirring
       if (omega > 0 && dist > 0.01) {
         var tx = -dy / dist;
         var ty = dx / dist;
+        var rx = dx / dist;
+        var ry = dy / dist;
+        // Tangential: rotation
         var ss = omega * 0.006 * Math.min(dist * 3, 1);
         p.x += tx * ss * dt;
         p.y += ty * ss * dt;
+        // Radial outward: centrifugal (F_cf ~ omega^2 * r)
+        var cf = omega * omega * dist * 0.0015;
+        p.x += rx * cf * dt;
+        p.y += ry * cf * dt;
       }
 
       p.x += bx;
@@ -807,8 +814,15 @@ function updateSugarParticles(dt) {
       if (omega > 0 && dist > 0.008) {
         var tx = -dy / dist;
         var ty = dx / dist;
+        var rx = dx / dist;
+        var ry = dy / dist;
+        // Tangential: rotation
         p.x += tx * omega * 0.003 * dt;
         p.y += ty * omega * 0.003 * dt;
+        // Radial outward: centrifugal (sugar denser than coffee)
+        var cf = omega * omega * dist * 0.001;
+        p.x += rx * cf * dt;
+        p.y += ry * cf * dt;
       }
       // Jitter
       p.x += (Math.random() - 0.5) * 0.0008;
