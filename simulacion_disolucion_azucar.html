@@ -444,7 +444,7 @@ footer#equations {
           <div class="stat-card"><div class="stat-label">Concentracion</div><div class="stat-value" id="statConc">0.00 g/L</div></div>
           <div class="stat-card"><div class="stat-label">Temp. cafe</div><div class="stat-value" id="statTemp">80 &deg;C</div></div>
           <div class="stat-card"><div class="stat-label">Tasa disol.</div><div class="stat-value" id="statRate">0.00 mg/s</div></div>
-          <div class="stat-card"><div class="stat-label">Radio part.</div><div class="stat-value" id="statRadius">6.20 mm</div></div>
+          <div class="stat-card"><div class="stat-label">Radio part.</div><div class="stat-value" id="statRadius">8.52 mm</div></div>
         </div>
       </div>
       <div class="graph-wrapper">
@@ -455,7 +455,7 @@ footer#equations {
   <footer id="equations">
     <div class="eq">
       <span class="eq-name">Noyes-Whitney:</span>
-      <span class="eq-math">dm/dt = k&middot;A&middot;(C<sub>s</sub> &minus; C)</span>
+      <span class="eq-math">dm/dt = &eta;&middot;k&middot;A&middot;(C<sub>s</sub> &minus; C)</span>
     </div>
     <div class="eq">
       <span class="eq-name">Sherwood:</span>
@@ -468,6 +468,14 @@ footer#equations {
     <div class="eq">
       <span class="eq-name">Part. encogiente:</span>
       <span class="eq-math">r = r<sub>0</sub>(m/m<sub>0</sub>)<sup>1/3</sup></span>
+    </div>
+    <div class="eq">
+      <span class="eq-name">Difusividad:</span>
+      <span class="eq-math">D(T) = D<sub>0</sub>&middot;e<sup>&minus;E<sub>a</sub>/R&middot;(1/T &minus; 1/T<sub>ref</sub>)</sup></span>
+    </div>
+    <div class="eq">
+      <span class="eq-name">Termodin&aacute;mica:</span>
+      <span class="eq-math">&Delta;H<sub>dis</sub> = +5.4 kJ/mol &nbsp;|&nbsp; &Delta;G &lt; 0 (espont&aacute;neo)</span>
     </div>
   </footer>
 </div>
@@ -482,7 +490,7 @@ footer#equations {
 var SUGAR_CUBE_MASS  = 4.0;        // grams per cube
 var SUGAR_DENSITY    = 1.55e6;      // g/m^3  (1.55 g/cm^3)
 var COFFEE_VOLUME_L  = 0.200;       // litres (200 mL cup)
-var R0               = 0.0062;      // equivalent sphere radius, m (~6.2 mm)
+var R0               = Math.pow(3 * SUGAR_CUBE_MASS / (4 * Math.PI * SUGAR_DENSITY), 1 / 3); // ~8.5 mm
 var COFFEE_DENSITY   = 1010;        // kg/m^3
 
 var PARTICLE_COUNT_PER_CUBE = 200;
@@ -559,7 +567,7 @@ function CsGperL(T) {
 // Molecular diffusion coefficient of sucrose in water (m^2/s)
 function Dsucrose(T_C) {
   var T_K = T_C + 273.15;
-  return 0.5e-9 * Math.exp(-2100 * (1 / T_K - 1 / 298));
+  return 0.5e-9 * Math.exp(-2189 * (1 / T_K - 1 / 298));
 }
 
 // Dynamic viscosity of coffee/water (Pa s) -- Arrhenius form
@@ -595,12 +603,14 @@ function kMT(T_C, rpmVal, r) {
 }
 
 // Noyes-Whitney dissolution rate for ONE particle of radius r (g/s)
+// Effectiveness factor accounts for porous cube vs ideal sphere assumption
+var ETA_EFFECTIVENESS = 0.012;
 function NoyesWhitney(T_C, rpmVal, r, Cbulk_gL) {
   if (r <= 0) return 0;
   var k = kMT(T_C, rpmVal, r);
   var A = 4 * Math.PI * r * r;                    // m^2
   var drivingForce = Math.max(0, CsGperL(T_C) - Cbulk_gL) * 1000; // g/m^3
-  return k * A * drivingForce;                     // g/s
+  return ETA_EFFECTIVENESS * k * A * drivingForce; // g/s
 }
 
 // Shrinking-sphere radius from remaining mass fraction
@@ -1389,11 +1399,13 @@ function loop(ts) {
   // Sim
   if (state === 'DISSOLVING') simStep(dt);
 
-  // Steam (always)
-  var sz = Math.min(cW, cH);
-  var cupR = sz * 0.37;
-  spawnSteam(cW / 2, cH / 2, cupR, dt);
-  updateSteam(dt);
+  // Steam
+  if (state !== 'PAUSED') {
+    var sz = Math.min(cW, cH);
+    var cupR = sz * 0.37;
+    spawnSteam(cW / 2, cH / 2, cupR, dt);
+    updateSteam(dt);
+  }
 
   // Render
   drawCoffee();
