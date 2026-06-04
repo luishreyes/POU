@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Efervescencia de una aspirina: Fenómenos de Transporte</title>
+
+<!-- MathJax: renderizado de ecuaciones -->
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+    svg: { fontCache: 'global' },
+    startup: { typeset: false }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<!-- React + Babel vía CDN (página standalone, sin build) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+  :root{
+    --agua-1:#cfeefe; --agua-2:#7fc4e8; --agua-3:#0a3550;
+    --vidrio:#9fb6c2;
+    --tableta:#f4f0e6; --tableta-mote:#e6dcc4;
+    --co2:#bfe3f2;
+    --conc-lo:#e8f6ff; --conc-mid:#1d6fa5; --conc-hi:#0a3550;
+    --frio:#3a7bd5; --calor:#e8743b;
+    --tinta:#2a3b45; --grid:#dde7ec;
+    --acento:#0d6f9e; --acento-2:#117a8b;
+    --bg:#f3f7fa; --panel:#ffffff; --borde:#dbe6ec;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--tinta);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;}
+  #root{max-width:1080px;margin:0 auto;padding:0 18px 80px;}
+
+  header.hero{
+    background:linear-gradient(135deg,#0a3550 0%,#117a8b 60%,#1d6fa5 100%);
+    color:#fff;border-radius:0 0 22px 22px;padding:34px 30px 30px;margin:0 -18px 26px;
+    box-shadow:0 8px 26px rgba(10,53,80,.25);position:relative;overflow:hidden;}
+  header.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;
+    border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 70%);}
+  .hero .kicker{font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;opacity:.85;margin:0 0 8px;}
+  .hero h1{margin:0 0 10px;font-size:2rem;font-weight:750;line-height:1.15;}
+  .hero p.sub{margin:0;max-width:680px;opacity:.95;font-size:1.02rem;}
+  .hero .rxn{margin-top:16px;display:inline-block;background:rgba(255,255,255,.12);
+    padding:9px 14px;border-radius:10px;font-size:.95rem;backdrop-filter:blur(2px);}
+
+  nav.tabs{display:flex;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:20;
+    background:var(--bg);padding:12px 0 12px;margin-bottom:8px;border-bottom:1px solid var(--borde);}
+  nav.tabs button{border:1px solid var(--borde);background:var(--panel);color:var(--tinta);
+    padding:9px 15px;border-radius:999px;font-size:.92rem;cursor:pointer;font-weight:600;
+    transition:all .18s;}
+  nav.tabs button:hover{border-color:var(--acento);}
+  nav.tabs button.active{background:var(--acento);color:#fff;border-color:var(--acento);
+    box-shadow:0 3px 10px rgba(13,111,158,.3);}
+
+  section.tab-content{animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  h2.sec{font-size:1.5rem;margin:26px 0 4px;color:#0a3550;}
+  h2.sec .num{display:inline-block;background:var(--acento);color:#fff;border-radius:8px;
+    font-size:.95rem;padding:2px 10px;margin-right:10px;vertical-align:middle;font-weight:700;}
+  .lead{font-size:1.05rem;color:#3a4d57;margin:6px 0 18px;}
+
+  .card{background:var(--panel);border:1px solid var(--borde);border-radius:16px;
+    padding:22px 24px;margin:18px 0;box-shadow:0 2px 10px rgba(10,53,80,.05);}
+  .card h3{margin:0 0 10px;font-size:1.15rem;color:#0a3550;}
+  .card p{margin:10px 0;}
+
+  .badge{display:inline-block;font-size:.74rem;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:3px 9px;border-radius:6px;margin-bottom:8px;}
+  .badge.masa{background:#e3f1fb;color:#0d6f9e;}
+  .badge.momentum{background:#eafbf0;color:#13855a;}
+  .badge.energia{background:#fdeee6;color:#c4581f;}
+  .badge.reaccion{background:#f1ecfb;color:#6b3fb0;}
+
+  .eq-block{margin:16px 0;text-align:center;overflow-x:auto;}
+  .callout{border-left:4px solid var(--acento);background:#f0f8fc;border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:16px 0;font-size:.96rem;}
+  .callout.warn{border-color:var(--calor);background:#fdf3ee;}
+  .callout b{color:#0a3550;}
+
+  .sim-wrap{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:start;}
+  @media(max-width:720px){.sim-wrap{grid-template-columns:1fr;}}
+  .controls{display:flex;flex-direction:column;gap:14px;}
+  .ctrl label{display:block;font-size:.85rem;font-weight:600;margin-bottom:3px;color:#3a4d57;}
+  .ctrl .val{color:var(--acento);font-weight:700;}
+  input[type=range]{width:100%;accent-color:var(--acento);cursor:pointer;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+  button.sim-btn{border:1px solid var(--acento);background:var(--acento);color:#fff;
+    padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.88rem;}
+  button.sim-btn.ghost{background:#fff;color:var(--acento);}
+  button.sim-btn:hover{filter:brightness(1.05);}
+  .seg{display:flex;border:1px solid var(--borde);border-radius:8px;overflow:hidden;}
+  .seg button{flex:1;border:none;background:#fff;padding:7px 6px;cursor:pointer;font-size:.82rem;font-weight:600;color:#3a4d57;}
+  .seg button.on{background:var(--acento);color:#fff;}
+
+  .readout{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+  .readout .chip{background:#f0f6fa;border:1px solid var(--borde);border-radius:8px;
+    padding:6px 11px;font-size:.85rem;font-variant-numeric:tabular-nums;}
+  .readout .chip b{color:var(--acento);}
+
+  canvas{display:block;border-radius:12px;}
+  svg{display:block;}
+
+  table.dim{width:100%;border-collapse:collapse;margin:14px 0;font-size:.9rem;}
+  table.dim th,table.dim td{border:1px solid var(--borde);padding:8px 10px;text-align:left;}
+  table.dim th{background:#eef5f9;color:#0a3550;}
+  table.dim td:first-child{font-weight:700;white-space:nowrap;}
+
+  ul.clean{margin:10px 0;padding-left:20px;}
+  ul.clean li{margin:6px 0;}
+
+  footer.foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--borde);
+    font-size:.85rem;color:#6a7c86;text-align:center;}
+
+  .loading{padding:60px;text-align:center;color:#6a7c86;}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Cargando simulaciones…</div></div>
+
+<script type="text/babel" data-presets="react">
+const {useState,useRef,useEffect,useCallback} = React;
+
+/* ============================================================
+   FÍSICA COMPARTIDA  (coherencia entre todos los módulos)
+   ============================================================ */
+const R_GAS = 8.314;                 // J/mol·K
+const T0K   = 273.15;
+// k(T) tipo Arrhenius, normalizada a 20 °C
+function arrhenius(T_C, Ea=42000){
+  const T = T_C + T0K, Tref = 20 + T0K;
+  return Math.exp(-Ea/R_GAS*(1/T - 1/Tref));
+}
+// Viscosidad del agua (Pa·s) — correlación simple T en °C
+function muWater(T_C){ return 2.414e-5 * Math.pow(10, 247.8/((T_C+T0K)-140)); }
+// Difusividad CO2 vía Stokes-Einstein relativa (D ∝ T/μ), base 1.9e-9 a 25 °C
+function diffCO2(T_C){
+  const base=1.9e-9, Tref=25+T0K, muRef=muWater(25);
+  return base*((T_C+T0K)/Tref)*(muRef/muWater(T_C));
+}
+// Solubilidad CO2 (mol/L a 1 atm) decreciente con T (cualitativa)
+function solCO2(T_C){ return 0.076*Math.exp(-0.021*T_C); }
+function lerp(a,b,t){return a+(b-a)*t;}
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+// interpolación de color RGB
+function mixColor(c1,c2,t){
+  const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const a=p(c1),b=p(c2);
+  return `rgb(${Math.round(lerp(a[0],b[0],t))},${Math.round(lerp(a[1],b[1],t))},${Math.round(lerp(a[2],b[2],t))})`;
+}
+
+/* ---- hook de animación: 1 rAF, dt clampeado, callback por ref ---- */
+function useAnimationFrame(callback, running){
+  const cbRef = useRef(callback);
+  useEffect(()=>{cbRef.current=callback;});
+  useEffect(()=>{
+    if(!running) return;
+    let id, last=null;
+    const loop=(t)=>{
+      if(last==null) last=t;
+      let dt=(t-last)/1000; last=t;
+      if(dt>0.05) dt=0.05;
+      cbRef.current(dt);
+      id=requestAnimationFrame(loop);
+    };
+    id=requestAnimationFrame(loop);
+    return ()=>cancelAnimationFrame(id);
+  },[running]);
+}
+
+/* ---- componente de ecuación (MathJax) ---- */
+function Eq({children, block}){
+  const ref=useRef();
+  useEffect(()=>{
+    const id=setTimeout(()=>{
+      if(window.MathJax&&window.MathJax.typesetPromise&&ref.current)
+        window.MathJax.typesetPromise([ref.current]).catch(()=>{});
+    },0);
+    return ()=>clearTimeout(id);
+  },[children]);
+  const wrap = block ? "\\[" : "\\(";
+  const wrapEnd = block ? "\\]" : "\\)";
+  return block
+    ? <div className="eq-block" ref={ref}>{wrap+children+wrapEnd}</div>
+    : <span ref={ref}>{wrap+children+wrapEnd}</span>;
+}
+
+/* ---- slider reutilizable ---- */
+function Slider({label,unit,min,max,step,value,onChange,fmt}){
+  return (
+    <div className="ctrl">
+      <label>{label}: <span className="val">{(fmt?fmt(value):value)}{unit}</span></label>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e=>onChange(parseFloat(e.target.value))}/>
+    </div>
+  );
+}
+
+/* ============================================================
+   ANIM 1 — EL VASO: partícula encogiente + burbujas de CO2
+   ============================================================ */
+function GlassSim(){
+  const cvs=useRef();
+  const [T,setT]=useState(20);
+  const [stir,setStir]=useState(0.2);
+  const [size,setSize]=useState('entera');
+  const [run,setRun]=useState(true);
+  const st=useRef(null);
+  const params=useRef({T,stir,size});
+  useEffect(()=>{params.current={T,stir,size};},[T,stir,size]);
+
+  const R0={entera:34,media:24,triturada:14}[size];
+  const frags={entera:1,media:1,triturada:7}[size];
+
+  const init=useCallback(()=>{
+    const W=280,H=380, waterTop=70;
+    const cx=W/2, baseY=H-40;
+    const tablets=[];
+    for(let i=0;i<frags;i++){
+      tablets.push({x:cx+(frags>1?(Math.random()-0.5)*70:0),
+        y:baseY-(frags>1?Math.random()*8:0), r:R0/Math.sqrt(frags), r0:R0/Math.sqrt(frags)});
+    }
+    st.current={W,H,waterTop,cx,baseY,tablets,bubbles:[],ripples:[],done:false,t:0};
+  },[R0,frags]);
+  useEffect(()=>{init();},[init]);
+
+  useAnimationFrame((dt)=>{
+    const s=st.current; if(!s) return;
+    const {T,stir}=params.current;
+    const kT=arrhenius(T);
+    s.t+=dt;
+    let totalA=0;
+    // encoger tabletas y emitir burbujas
+    s.tablets.forEach(tb=>{
+      if(tb.r<=0.4) return;
+      const A=Math.PI*tb.r*tb.r;            // área superficial ∝ r²
+      totalA+=A;
+      const shrink = 5.5*kT*(1+0.9*stir);   // mm/s escala
+      tb.r=Math.max(0, tb.r - shrink*dt);
+      // emisión ~ k·A·(1+stir)
+      const rate = 0.020*kT*A*(1+1.4*stir);
+      let n=rate*dt;
+      while(n>0){ if(Math.random()<n && s.bubbles.length<150){
+          const ang=Math.random()*Math.PI*2, rr=tb.r*Math.random();
+          s.bubbles.push({x:tb.x+Math.cos(ang)*rr, y:tb.y-Math.abs(Math.sin(ang))*rr*0.5,
+            r:1.2+Math.random()*0.8, vy:0, vx:0, ph:Math.random()*6.28});
+      } n-=1; }
+    });
+    // actualizar burbujas (flotación − arrastre, crecen al subir)
+    for(let i=s.bubbles.length-1;i>=0;i--){
+      const b=s.bubbles[i];
+      b.r+=(4.5+2*stir)*dt;                 // crecimiento
+      const Fb=b.r*b.r*b.r*0.9;             // empuje ∝ r³
+      const Fd=b.r*Math.abs(b.vy)*1.4;      // arrastre
+      const a=(Fb-Fd)/(b.r*b.r*b.r*0.9+0.01)*180;
+      b.vy+=a*dt; b.vy=clamp(b.vy,0,170+stir*120);
+      b.ph+=dt*4;
+      b.vx=Math.sin(b.ph)*(6+stir*34);
+      b.y-=b.vy*dt; b.x+=b.vx*dt;
+      if(b.y<=s.waterTop){ s.ripples.push({x:clamp(b.x,s.W*0.2,s.W*0.8),r:b.r,a:1}); s.bubbles.splice(i,1); }
+    }
+    for(let i=s.ripples.length-1;i>=0;i--){ const r=s.ripples[i]; r.r+=40*dt; r.a-=1.6*dt; if(r.a<=0) s.ripples.splice(i,1); }
+    s.done = totalA<0.5;
+    draw();
+  }, run);
+
+  function draw(){
+    const s=st.current, c=cvs.current; if(!s||!c) return;
+    const dpr=window.devicePixelRatio||1;
+    if(c.width!==s.W*dpr){ c.width=s.W*dpr; c.height=s.H*dpr; c.style.width=s.W+'px'; c.style.height=s.H+'px'; }
+    const ctx=c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,s.W,s.H);
+    const {T}=params.current;
+    // agua (tinte según T: frío→azulado)
+    const tt=clamp((T-5)/55,0,1);
+    const g=ctx.createLinearGradient(0,s.waterTop,0,s.H);
+    g.addColorStop(0, mixColor('#bfe6fb','#d7eefb',1-tt));
+    g.addColorStop(1, mixColor('#3f93c4','#5fa8d6',tt));
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.moveTo(28,s.waterTop); ctx.lineTo(s.W-28,s.waterTop);
+    ctx.lineTo(s.W-36,s.H-18); ctx.lineTo(36,s.H-18); ctx.closePath(); ctx.fill();
+    // tabletas
+    s.tablets.forEach(tb=>{ if(tb.r<=0.4) return;
+      ctx.fillStyle='#f4f0e6'; ctx.strokeStyle='#cdbf9a'; ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.ellipse(tb.x,tb.y,tb.r,tb.r*0.55,0,0,7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#e6dcc4';
+      for(let k=0;k<6;k++){ ctx.beginPath();
+        ctx.arc(tb.x+(Math.random()-0.5)*tb.r,tb.y+(Math.random()-0.5)*tb.r*0.5,0.8,0,7); ctx.fill(); }
+    });
+    // burbujas
+    s.bubbles.forEach(b=>{
+      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7);
+      ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.fill();
+      ctx.strokeStyle='rgba(191,227,242,0.9)'; ctx.lineWidth=0.8; ctx.stroke();
+      ctx.beginPath(); ctx.arc(b.x-b.r*0.3,b.y-b.r*0.3,b.r*0.3,0,7);
+      ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fill();
+    });
+    // ripples
+    s.ripples.forEach(r=>{ ctx.beginPath(); ctx.arc(r.x,s.waterTop,r.r,0,7);
+      ctx.strokeStyle=`rgba(120,180,210,${r.a})`; ctx.lineWidth=1.4; ctx.stroke(); });
+    // vaso (vidrio)
+    ctx.strokeStyle='#9fb6c2'; ctx.lineWidth=3; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(26,52); ctx.lineTo(s.W-26,52);
+    ctx.lineTo(s.W-36,s.H-16); ctx.lineTo(36,s.H-16); ctx.closePath(); ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(40,70); ctx.lineTo(48,s.H-30); ctx.stroke();
+    if(s.done){ ctx.fillStyle='rgba(10,53,80,0.78)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Tableta disuelta', s.cx, s.H/2); }
+  }
+
+  return (
+    <div className="sim-wrap">
+      <canvas ref={cvs}/>
+      <div className="controls">
+        <span className="badge masa">Transferencia de masa · momentum</span>
+        <Slider label="Temperatura del agua" unit=" °C" min={5} max={60} step={1} value={T} onChange={setT}/>
+        <Slider label="Agitación / convección" unit="" min={0} max={1} step={0.05} value={stir}
+          onChange={setStir} fmt={v=>v.toFixed(2)}/>
+        <div className="ctrl">
+          <label>Estado de la tableta (área superficial)</label>
+          <div className="seg">
+            {['entera','media','triturada'].map(o=>
+              <button key={o} className={size===o?'on':''} onClick={()=>setSize(o)}>{o}</button>)}
+          </div>
+        </div>
+        <div className="btn-row">
+          <button className="sim-btn" onClick={()=>setRun(r=>!r)}>{run?'⏸ Pausa':'▶ Reanudar'}</button>
+          <button className="sim-btn ghost" onClick={()=>{init();setRun(true);}}>↺ Reiniciar</button>
+        </div>
+        <div className="callout" style={{margin:'6px 0 0',fontSize:'.88rem'}}>
+          Sube la temperatura o tritura la tableta y observa cómo aumenta el flux de disolución
+          (<Eq>{String.raw`N_A=k_c(C_s-C_\infty)`}</Eq>): más burbujas por segundo y encogimiento más veloz.
+          El propio burbujeo <b>autoagita</b> el sistema y eleva <Eq>{String.raw`Sh`}</Eq>.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ANIM 2 — CAPA LÍMITE DE CONCENTRACIÓN
+   ============================================================ */
+function BoundaryLayerSim(){
+  const [stir,setStir]=useState(0.2);
+  const [T,setT]=useState(20);
+  const W=440,H=260, wallX=70, plotX0=210, plotX1=420, plotY0=40, plotY1=210;
+  const D=diffCO2(T), Cs=solCO2(T);
+  const delta0=120;
+  const deltaPx = clamp(delta0/(1+3.2*stir), 14, 130);   // capa límite (px en la vista)
+  const deltaUm = (deltaPx/130)*900;                      // µm aprox para lectura
+  const kc = D/(deltaUm*1e-6);                            // m/s
+  const Sh = kc*0.001/D;                                  // L=1mm
+  const flux = D*(Cs*1000)/(deltaUm*1e-6);                // mol/m²s (orden)
+  // perfil C(x): meseta en pared, cae a 0 en delta
+  const N=40, pts=[];
+  for(let i=0;i<=N;i++){
+    const f=i/N, x=f*(deltaPx);
+    const C = Cs*(1-f);                       // lineal idealizado
+    const px = plotX0 + (x/130)*(plotX1-plotX0);
+    const py = plotY1 - (C/Cs)*(plotY1-plotY0);
+    pts.push([clamp(px,plotX0,plotX1),py]);
+  }
+  // tramo a C=0 hasta el final
+  const lastPx=plotX0+(deltaPx/130)*(plotX1-plotX0);
+  const path=`M ${plotX0} ${pts[0][1]} `+pts.map(p=>`L ${p[0]} ${p[1]}`).join(' ')+` L ${plotX1} ${plotY1}`;
+  const haloR = wallX + deltaPx;
+
+  return (
+    <div className="sim-wrap">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{maxWidth:'100%'}}>
+        <defs>
+          <radialGradient id="halo" cx="0%" cy="50%" r="100%">
+            <stop offset="0%" stopColor="var(--conc-hi)"/>
+            <stop offset={`${(deltaPx/(W*0.45))*55}%`} stopColor="var(--conc-mid)"/>
+            <stop offset={`${Math.min(95,(deltaPx/(W*0.45))*100)}%`} stopColor="var(--conc-lo)"/>
+            <stop offset="100%" stopColor="#ffffff"/>
+          </radialGradient>
+          <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#3a7bd5"/>
+          </marker>
+        </defs>
+        {/* halo de concentración sobre el sólido */}
+        <rect x="0" y="20" width="190" height="220" fill="url(#halo)" opacity="0.9"/>
+        {/* sólido (tableta) */}
+        <rect x="0" y="20" width={wallX} height="220" fill="#f4f0e6" stroke="#cdbf9a"/>
+        <text x="8" y="135" fontSize="11" fill="#7a6a44" transform="rotate(-90 14,135)">SÓLIDO</text>
+        {/* línea de delta */}
+        <line x1={haloR} y1="20" x2={haloR} y2="240" stroke="#0a3550" strokeDasharray="4 3" strokeWidth="1.4"/>
+        <text x={haloR+4} y="34" fontSize="11" fill="#0a3550">δ</text>
+        {/* flechas de convección (animadas con CSS) */}
+        {[60,110,160,210].map((y,i)=>(
+          <line key={i} x1={wallX+6} y1={y} x2={haloR-4} y2={y} stroke="#3a7bd5"
+            strokeWidth={1+stir*2} markerEnd="url(#arr)" opacity={0.25+stir*0.7}>
+            <animate attributeName="x1" values={`${wallX+6};${haloR-14};${wallX+6}`}
+              dur={`${clamp(2.2-stir*1.6,0.5,2.2)}s`} repeatCount="indefinite"/>
+          </line>
+        ))}
+        {/* gráfico cartesiano C vs distancia */}
+        <line x1={plotX0} y1={plotY1} x2={plotX1} y2={plotY1} stroke="#2a3b45"/>
+        <line x1={plotX0} y1={plotY0} x2={plotX0} y2={plotY1} stroke="#2a3b45"/>
+        <text x={plotX0-4} y={plotY0-6} fontSize="11" fill="#2a3b45">C</text>
+        <text x={plotX0+8} y={plotY0+4} fontSize="10" fill="#1d6fa5">Cₛ</text>
+        <text x={plotX1-8} y={plotY1+16} fontSize="11" fill="#2a3b45">distancia →</text>
+        <text x={plotX0+4} y={plotY1+16} fontSize="10" fill="#2a3b45">pared</text>
+        <path d={path} fill="rgba(29,111,165,0.12)" stroke="var(--conc-mid)" strokeWidth="2.4"/>
+        <line x1={lastPx} y1={plotY0} x2={lastPx} y2={plotY1} stroke="#0a3550" strokeDasharray="3 3" opacity="0.6"/>
+        <text x={lastPx-2} y={plotY0-4} fontSize="10" fill="#0a3550">δ</text>
+      </svg>
+      <div className="controls">
+        <span className="badge masa">Transferencia de masa convectiva</span>
+        <Slider label="Agitación (controla Sh)" unit="" min={0} max={1} step={0.05} value={stir}
+          onChange={setStir} fmt={v=>v.toFixed(2)}/>
+        <Slider label="Temperatura" unit=" °C" min={5} max={60} step={1} value={T} onChange={setT}/>
+        <div className="readout">
+          <span className="chip">δ ≈ <b>{deltaUm.toFixed(0)}</b> µm</span>
+          <span className="chip">k_c ≈ <b>{(kc*1e5).toFixed(1)}</b>×10⁻⁵ m/s</span>
+          <span className="chip">Sh ≈ <b>{Sh.toFixed(0)}</b></span>
+          <span className="chip">D ≈ <b>{(D*1e9).toFixed(2)}</b>×10⁻⁹ m²/s</span>
+        </div>
+        <div className="callout" style={{margin:'6px 0 0',fontSize:'.88rem'}}>
+          La convección <b>adelgaza</b> la capa límite δ, lo que empina el gradiente en la pared y
+          aumenta el flux <Eq>{String.raw`N_A=k_c(C_s-C_\infty)`}</Eq>. Como <Eq>{String.raw`Sc\gg1`}</Eq>,
+          esta capa de concentración es muy delgada frente a la de velocidad.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ANIM 3 — CINÉTICA: generación de CO2 vs tiempo
+   ============================================================ */
+function KineticsSim(){
+  const [T,setT]=useState(20);
+  const [size,setSize]=useState(1.0);   // 1=entera, 1.6 triturada (más área)
+  const [run,setRun]=useState(true);
+  const [tick,setTick]=useState(0);
+  const data=useRef({t:0,m:1,V:0,rate:0,buf:[]});
+  const ghost=useRef(null);
+  const params=useRef({T,size});
+  useEffect(()=>{params.current={T,size};},[T,size]);
+
+  const reset=useCallback(()=>{ data.current={t:0,m:1,V:0,rate:0,buf:[]}; },[]);
+  useEffect(()=>{reset();},[reset,T,size]);
+
+  useAnimationFrame((dt)=>{
+    const d=data.current; const {T,size}=params.current;
+    if(d.m>0.001){
+      const k=arrhenius(T)*0.9*size;
+      const A=Math.pow(Math.max(d.m,0),2/3);   // área ∝ m^(2/3)
+      d.rate=k*A;
+      const dm=Math.min(d.m, d.rate*dt*1.3);
+      d.m-=dm; d.V+=dm; d.t+=dt;
+      if(d.buf.length===0 || d.t-d.buf[d.buf.length-1][0]>0.05)
+        d.buf.push([d.t, d.rate, d.V]);
+    } else { d.rate=0; }
+    setTick(x=>x+1);
+  }, run);
+
+  // dibujo SVG
+  const W=440,H=260, x0=46,x1=420,y0=24,y1=214;
+  const tmax=Math.max(8, data.current.t*1.05);
+  const rmax=1.3, Vmax=1.0;
+  const buf=data.current.buf;
+  const sx=t=>x0+(t/tmax)*(x1-x0);
+  const syR=r=>y1-(r/rmax)*(y1-y0);
+  const syV=v=>y1-(v/Vmax)*(y1-y0);
+  const mkPath=(idx,sy)=>buf.length>1?("M "+buf.map(p=>`${sx(p[0]).toFixed(1)} ${sy(p[idx]).toFixed(1)}`).join(" L ")):"";
+  const ratePath=mkPath(1,syR), volPath=mkPath(2,syV);
+  const gRate=ghost.current?("M "+ghost.current.map(p=>`${sx(p[0]).toFixed(1)} ${syR(p[1]).toFixed(1)}`).join(" L ")):"";
+
+  return (
+    <div className="sim-wrap">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{maxWidth:'100%'}}>
+        {/* grid */}
+        {[0,0.25,0.5,0.75,1].map((f,i)=>(
+          <line key={i} x1={x0} y1={lerp(y1,y0,f)} x2={x1} y2={lerp(y1,y0,f)} stroke="#eef3f6"/>
+        ))}
+        <line x1={x0} y1={y1} x2={x1} y2={y1} stroke="#2a3b45"/>
+        <line x1={x0} y1={y0} x2={x0} y2={y1} stroke="#2a3b45"/>
+        <text x={x0-4} y={y0-8} fontSize="10" fill="#c4581f" textAnchor="end">dV/dt</text>
+        <text x={x1} y={y0-8} fontSize="10" fill="#1d6fa5" textAnchor="end">V (CO₂) acumulado</text>
+        <text x={(x0+x1)/2} y={y1+18} fontSize="11" fill="#2a3b45" textAnchor="middle">tiempo (s) →</text>
+        {gRate && <path d={gRate} fill="none" stroke="#c4581f" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.45"/>}
+        {volPath && <path d={volPath} fill="none" stroke="#1d6fa5" strokeWidth="2.6"/>}
+        {ratePath && <path d={ratePath} fill="none" stroke="#e8743b" strokeWidth="2.6"/>}
+        {/* cursor */}
+        {buf.length>1 && <circle cx={sx(buf[buf.length-1][0])} cy={syR(buf[buf.length-1][1])} r="3.5" fill="#e8743b"/>}
+        {buf.length>1 && <circle cx={sx(buf[buf.length-1][0])} cy={syV(buf[buf.length-1][2])} r="3.5" fill="#1d6fa5"/>}
+        {/* columna de gas */}
+        <rect x={x1-4} y={y0} width="0" height="0"/>
+      </svg>
+      <div className="controls">
+        <span className="badge reaccion">Cinética · reacción ↔ transporte</span>
+        <Slider label="Temperatura (Arrhenius)" unit=" °C" min={5} max={60} step={1} value={T} onChange={setT}/>
+        <div className="ctrl">
+          <label>Área superficial</label>
+          <div className="seg">
+            <button className={size===1.0?'on':''} onClick={()=>setSize(1.0)}>entera</button>
+            <button className={size===1.25?'on':''} onClick={()=>setSize(1.25)}>media</button>
+            <button className={size===1.7?'on':''} onClick={()=>setSize(1.7)}>triturada</button>
+          </div>
+        </div>
+        <div className="readout">
+          <span className="chip">t = <b>{data.current.t.toFixed(1)}</b> s</span>
+          <span className="chip">dV/dt = <b>{data.current.rate.toFixed(2)}</b></span>
+          <span className="chip">V = <b>{(data.current.V*100).toFixed(0)}</b>%</span>
+        </div>
+        <div className="btn-row">
+          <button className="sim-btn" onClick={()=>setRun(r=>!r)}>{run?'⏸':'▶'}</button>
+          <button className="sim-btn ghost" onClick={()=>{ghost.current=data.current.buf.slice();reset();setRun(true);}}>Superponer ref.</button>
+          <button className="sim-btn ghost" onClick={()=>{reset();setRun(true);}}>↺ Reset</button>
+        </div>
+        <div className="callout" style={{margin:'6px 0 0',fontSize:'.88rem'}}>
+          <b>Punto clave:</b> triturar la tableta no cambia el CO₂ <i>total</i> (misma masa, misma
+          meseta de V), pero <b>sí</b> la velocidad: el pico de dV/dt es más alto y temprano porque
+          el área <Eq>{String.raw`A\propto m^{2/3}`}</Eq> es mayor.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ANIM 4 — BURBUJA INDIVIDUAL: fuerzas + Reynolds
+   ============================================================ */
+function BubbleSim(){
+  const [rmm,setRmm]=useState(1.0);    // radio mm
+  const [T,setT]=useState(20);
+  const [model,setModel]=useState('auto');
+  const [tick,setTick]=useState(0);
+  const v=useRef(0);
+  const params=useRef({rmm,T,model});
+  useEffect(()=>{params.current={rmm,T,model};},[rmm,T,model]);
+  useEffect(()=>{v.current=0;},[rmm,T,model]);
+
+  const rho=997, g=9.81;
+  useAnimationFrame((dt)=>{
+    const {rmm,T,model}=params.current;
+    const r=rmm/1000, mu=muWater(T);
+    const Vol=4/3*Math.PI*r*r*r, A=Math.PI*r*r;
+    const Fb=rho*g*Vol;
+    let vv=v.current;
+    const Re=Math.max(1e-3, rho*Math.abs(vv)*2*r/mu);
+    let Cd;
+    if(model==='stokes') Cd=24/Re;
+    else if(model==='turb') Cd=0.44;
+    else Cd=24/Re*(1+0.15*Math.pow(Re,0.687));   // Schiller-Naumann
+    const Fd=0.5*rho*Cd*A*vv*vv;
+    const mAdd=0.5*rho*Vol;                        // masa añadida (burbuja ~sin masa)
+    const a=(Fb-Fd)/mAdd;
+    vv+=a*dt; v.current=Math.max(0,vv);
+    setTick(x=>x+1);
+  }, true);
+
+  const r=rmm/1000, mu=muWater(T);
+  const vv=v.current;
+  const Re=rho*vv*2*r/mu;
+  const Vol=4/3*Math.PI*r*r*r;
+  const Fb=rho*g*Vol;
+  const A=Math.PI*r*r;
+  let Cd = model==='stokes'?24/Math.max(Re,1e-3):model==='turb'?0.44:24/Math.max(Re,1e-3)*(1+0.15*Math.pow(Math.max(Re,1e-3),0.687));
+  const Fd=0.5*rho*Cd*A*vv*vv;
+  const regimen = Re<1?'Stokes (laminar)':Re<500?'intermedio (elipsoidal)':'inercial / turbulento';
+
+  const W=300,H=300, cx=150, cy=160;
+  const bub=clamp(rmm*16,16,72);
+  const sB=clamp(Fb*7000,20,95), sD=clamp(Fd*7000,0,95);
+  return (
+    <div className="sim-wrap">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{maxWidth:'100%'}}>
+        <rect x="0" y="0" width={W} height={H} fill="#eaf6fc" rx="12"/>
+        {/* líneas de corriente */}
+        {[-1,1].map(s=>(
+          <path key={s} d={`M ${cx+s*bub} ${cy-bub} q ${s*(30+Re*0.02)} ${-40} ${s*10} ${-90}`}
+            fill="none" stroke="#9fc4dc" strokeWidth="1.4" opacity={Re>500?0.8:0.4}/>
+        ))}
+        {/* burbuja */}
+        <circle cx={cx} cy={cy} r={bub} fill="rgba(255,255,255,0.6)" stroke="#7fbfe0" strokeWidth="2"/>
+        <circle cx={cx-bub*0.3} cy={cy-bub*0.3} r={bub*0.28} fill="rgba(255,255,255,0.85)"/>
+        {/* vectores */}
+        <line x1={cx} y1={cy} x2={cx} y2={cy-sB} stroke="#1d6fa5" strokeWidth="4" markerEnd="url(#vb)"/>
+        <line x1={cx} y1={cy} x2={cx} y2={cy+sD} stroke="#e8743b" strokeWidth="4" markerEnd="url(#vd)"/>
+        <defs>
+          <marker id="vb" markerWidth="9" markerHeight="9" refX="3" refY="6" orient="auto"><path d="M0,6 L3,0 L6,6 Z" fill="#1d6fa5"/></marker>
+          <marker id="vd" markerWidth="9" markerHeight="9" refX="3" refY="0" orient="auto"><path d="M0,0 L3,6 L6,0 Z" fill="#e8743b"/></marker>
+        </defs>
+        <text x={cx+8} y={cy-sB+6} fontSize="12" fill="#1d6fa5" fontWeight="700">Empuje</text>
+        <text x={cx+8} y={cy+sD-2} fontSize="12" fill="#e8743b" fontWeight="700">Arrastre</text>
+        <text x={cx} y={H-12} fontSize="11" fill="#2a3b45" textAnchor="middle">{regimen}</text>
+      </svg>
+      <div className="controls">
+        <span className="badge momentum">Transferencia de momentum</span>
+        <Slider label="Radio de la burbuja" unit=" mm" min={0.05} max={3} step={0.05} value={rmm}
+          onChange={setRmm} fmt={v=>v.toFixed(2)}/>
+        <Slider label="Temperatura (↓μ)" unit=" °C" min={5} max={60} step={1} value={T} onChange={setT}/>
+        <div className="ctrl">
+          <label>Modelo de arrastre Cᴅ</label>
+          <div className="seg">
+            <button className={model==='stokes'?'on':''} onClick={()=>setModel('stokes')}>Stokes</button>
+            <button className={model==='auto'?'on':''} onClick={()=>setModel('auto')}>transición</button>
+            <button className={model==='turb'?'on':''} onClick={()=>setModel('turb')}>turbulento</button>
+          </div>
+        </div>
+        <div className="readout">
+          <span className="chip">v ≈ <b>{(vv*100).toFixed(1)}</b> cm/s</span>
+          <span className="chip">Re ≈ <b>{Re<1?Re.toFixed(2):Re.toFixed(0)}</b></span>
+          <span className="chip">Cᴅ ≈ <b>{Cd.toFixed(2)}</b></span>
+        </div>
+        <div className="callout warn" style={{margin:'6px 0 0',fontSize:'.88rem'}}>
+          Para una burbuja de ~1 mm, <Eq>{String.raw`Re\sim 10^2\!-\!10^3`}</Eq>: el régimen es
+          inercial y <b>la ley de Stokes NO aplica</b> (la sobreestima). Compáralo cambiando el modelo de Cᴅ.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   ANIM 5 — ENFRIAMIENTO ENDOTÉRMICO
+   ============================================================ */
+function ThermoSim(){
+  const [Tamb,setTamb]=useState(22);
+  const [amount,setAmount]=useState(1.0);
+  const [hRel,setHRel]=useState(0.25);
+  const [run,setRun]=useState(true);
+  const [tick,setTick]=useState(0);
+  const sim=useRef({t:0,T:22,m:1,buf:[],Tmin:99});
+  const params=useRef({Tamb,amount,hRel});
+  useEffect(()=>{params.current={Tamb,amount,hRel};},[Tamb,amount,hRel]);
+  const reset=useCallback(()=>{sim.current={t:0,T:params.current.Tamb,m:1,buf:[],Tmin:99};},[]);
+  useEffect(()=>{reset();},[reset,Tamb,amount]);
+
+  useAnimationFrame((dt)=>{
+    const s=sim.current; const {Tamb,amount,hRel}=params.current;
+    const k=arrhenius(s.T)*0.9;
+    const A=Math.pow(Math.max(s.m,0),2/3);
+    const rate=k*A;
+    const dm=Math.min(s.m,rate*dt*1.3); s.m-=dm;
+    const Qrxn = -dm*amount*4.0;         // endotérmico (enfría) — ΔT total ~ pocos °C
+    const Qamb = hRel*(Tamb-s.T)*dt;
+    s.T += Qrxn + Qamb;
+    s.t += dt;
+    s.Tmin=Math.min(s.Tmin,s.T);
+    if(s.buf.length===0||s.t-s.buf[s.buf.length-1][0]>0.06) s.buf.push([s.t,s.T]);
+    if(s.t>22){reset();}
+    setTick(x=>x+1);
+  }, run);
+
+  const s=sim.current;
+  const W=440,H=240,x0=44,x1=424,y0=20,y1=200;
+  const Tlo=2,Thi=60, tmax=22;
+  const sx=t=>x0+(t/tmax)*(x1-x0);
+  const sy=T=>y1-((T-Tlo)/(Thi-Tlo))*(y1-y0);
+  const path=s.buf.length>1?("M "+s.buf.map(p=>`${sx(p[0]).toFixed(1)} ${sy(p[1]).toFixed(1)}`).join(" L ")):"";
+  const ambY=sy(Tamb);
+  // termómetro
+  const Tnorm=clamp((s.T-2)/58,0,1);
+  const col=mixColor('#3a7bd5','#e8743b',Tnorm);
+  const colH=lerp(18,150,Tnorm);
+
+  return (
+    <div className="sim-wrap">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{maxWidth:'100%'}}>
+        {/* termómetro */}
+        <g transform="translate(14,14)">
+          <rect x="6" y="0" width="14" height="150" rx="7" fill="#eef3f6" stroke="#9fb6c2"/>
+          <rect x="6" y={150-colH} width="14" height={colH} rx="7" fill={col}/>
+          <circle cx="13" cy="160" r="14" fill={col} stroke="#9fb6c2"/>
+          <text x="30" y="14" fontSize="11" fill="#2a3b45">{s.T.toFixed(1)} °C</text>
+        </g>
+        {/* curva T(t) */}
+        <line x1={x0} y1={y1} x2={x1} y2={y1} stroke="#2a3b45"/>
+        <line x1={x0} y1={y0} x2={x0} y2={y1} stroke="#2a3b45"/>
+        <line x1={x0} y1={ambY} x2={x1} y2={ambY} stroke="#9fb6c2" strokeDasharray="4 3"/>
+        <text x={x1} y={ambY-4} fontSize="10" fill="#6a7c86" textAnchor="end">T ambiente</text>
+        <text x={x0-4} y={y0+4} fontSize="10" fill="#2a3b45" textAnchor="end">T</text>
+        <text x={(x0+x1)/2} y={y1+18} fontSize="11" fill="#2a3b45" textAnchor="middle">tiempo (s) →</text>
+        {path && <path d={path} fill="none" stroke="#3a7bd5" strokeWidth="2.6"/>}
+        {s.buf.length>1 && <circle cx={sx(s.buf[s.buf.length-1][0])} cy={sy(s.buf[s.buf.length-1][1])} r="3.5" fill="#3a7bd5"/>}
+      </svg>
+      <div className="controls">
+        <span className="badge energia">Transferencia de energía</span>
+        <Slider label="Temperatura ambiente / inicial" unit=" °C" min={8} max={45} step={1} value={Tamb} onChange={setTamb}/>
+        <Slider label="Cantidad de reactivo" unit="" min={0.4} max={1.6} step={0.1} value={amount}
+          onChange={setAmount} fmt={v=>v.toFixed(1)}/>
+        <Slider label="Recuperación con el entorno (h)" unit="" min={0.05} max={0.6} step={0.05} value={hRel}
+          onChange={setHRel} fmt={v=>v.toFixed(2)}/>
+        <div className="readout">
+          <span className="chip">T = <b>{s.T.toFixed(1)}</b> °C</span>
+          <span className="chip">ΔT mín = <b>{(s.Tmin-Tamb).toFixed(1)}</b> °C</span>
+        </div>
+        <div className="btn-row">
+          <button className="sim-btn" onClick={()=>setRun(r=>!r)}>{run?'⏸':'▶'}</button>
+          <button className="sim-btn ghost" onClick={()=>{reset();setRun(true);}}>↺ Reset</button>
+        </div>
+        <div className="callout warn" style={{margin:'6px 0 0',fontSize:'.88rem'}}>
+          El proceso global es <b>endotérmico</b>: el agua <b>se enfría</b> unos grados (no se calienta).
+          Al bajar T, <Eq>{String.raw`D`}</Eq> disminuye (Stokes–Einstein) y la cinética se frena
+          (Arrhenius); luego el calor del entorno la recupera por convección.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CONTENIDO TEÓRICO POR PESTAÑA
+   ============================================================ */
+function Intro(){
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">0</span>El sistema y su química</h2>
+      <p className="lead">Por qué una pastilla efervescente es el problema "perfecto" de Fenómenos de Transporte:
+        acopla simultáneamente masa, momentum y energía sobre una geometría que cambia en el tiempo.</p>
+      <div className="card">
+        <h3>¿Qué ocurre al echarla al agua?</h3>
+        <p>La tableta contiene <b>ácido acetilsalicílico</b> (el principio activo, poco soluble),
+        <b> bicarbonato de sodio</b> (NaHCO₃) y un <b>ácido sólido</b>, típicamente <b>ácido cítrico</b>.
+        En seco no reaccionan. El agua actúa a la vez como <b>disolvente, reactivo y medio de transporte</b>:
+        penetra los poros, disuelve los sólidos y permite que el ácido protone al bicarbonato, liberando CO₂.</p>
+        <p>La reacción global (estequiometría correcta <b>3:1</b> bicarbonato:ácido cítrico) es:</p>
+        <Eq block>{String.raw`\mathrm{C_6H_8O_7\,(ac) + 3\,NaHCO_3\,(ac) \rightarrow Na_3C_6H_5O_7\,(ac) + 3\,CO_2\,(g) + 3\,H_2O\,(l)}`}</Eq>
+        <p>El paso rápido que genera el gas pasa por el ácido carbónico:</p>
+        <Eq block>{String.raw`\mathrm{HCO_3^- + H^+ \rightleftharpoons H_2CO_3 \rightleftharpoons CO_2(ac) + H_2O \xrightarrow{\text{nucleación}} CO_2(g)}`}</Eq>
+        <div className="callout">
+          <b>Aclaración rigurosa:</b> el ácido acetilsalicílico <b>no</b> produce el gas; solo se disuelve
+          (ayudado por el medio, que forma acetilsalicilato de sodio más soluble). El CO₂ proviene
+          exclusivamente del par bicarbonato + ácido.
+        </div>
+      </div>
+      <div className="card">
+        <h3>Una cadena de resistencias</h3>
+        <p>El objetivo de ingeniería es identificar la <b>etapa controlante</b>. El fenómeno encadena:</p>
+        <ul className="clean">
+          <li><b>① Disolución del sólido</b> → transferencia de <b>masa</b> (película alrededor de la partícula).</li>
+          <li><b>② Reacción ácido-base</b> homogénea → <b>cinética</b> (muy rápida aquí).</li>
+          <li><b>③ Nucleación y desorción del CO₂</b> → transferencia de masa interfacial gas-líquido.</li>
+          <li><b>④ Ascenso de burbujas</b> → transferencia de <b>momentum</b> (y autoagitación).</li>
+          <li><b>⑤ Enfriamiento</b> de la disolución → transferencia de <b>energía</b>.</li>
+        </ul>
+        <p>Recorre las pestañas siguientes para ver cada fenómeno con su modelo, sus ecuaciones,
+          sus números adimensionales y una <b>simulación interactiva</b>.</p>
+      </div>
+    </section>
+  );
+}
+
+function MasaTab(){
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">1</span>Transferencia de masa: disolución</h2>
+      <p className="lead">La primera resistencia es disolver el bicarbonato y el ácido sólidos. Modelo de
+        <b> partícula que se encoge</b> con control por película externa.</p>
+      <div className="card">
+        <span className="badge masa">Concepto</span>
+        <p>En la superficie sólido-líquido, la concentración es la de <b>saturación</b> <Eq>{String.raw`C_s`}</Eq>;
+        lejos vale <Eq>{String.raw`C_\infty<C_s`}</Eq>. Esa diferencia impulsa el transporte a través de una
+        <b> capa límite de concentración</b> de espesor <Eq>{String.raw`\delta_c`}</Eq>. El flux se modela con un
+        coeficiente convectivo <Eq>{String.raw`k_c`}</Eq> (modelo de película), análogo a <Eq>{String.raw`h`}</Eq> en calor:</p>
+        <Eq block>{String.raw`N_A=-D_{AB}\frac{dC_A}{dz}\;\Longrightarrow\;N_A=k_c\,(C_s-C_\infty),\qquad k_c\approx\frac{D_{AB}}{\delta_c}`}</Eq>
+        <p>Como el producto es soluble (no hay costra), el radio <Eq>{String.raw`R(t)`}</Eq> decrece y domina la
+        resistencia externa. El balance sobre la partícula da:</p>
+        <Eq block>{String.raw`\rho_s\frac{dR}{dt}=-k_c\,(C_s-C_\infty)\;\Longrightarrow\;t_{dis}=\frac{\rho_s R_0}{k_c(C_s-C_\infty)}`}</Eq>
+        <div className="callout">Difusividades en agua: CO₂ ≈ 1.9×10⁻⁹ m²/s, HCO₃⁻ ≈ 1.2×10⁻⁹, citrato ≈ 0.6×10⁻⁹.
+          <Eq>{String.raw`k_c\sim10^{-5}\!-\!10^{-4}`}</Eq> m/s ⇒ tableta disuelta en 30–120 s.</div>
+      </div>
+      <div className="card">
+        <span className="badge masa">Adimensionales</span>
+        <p><b>Sherwood</b> (convección/difusión de masa, el "Nusselt de masa") y <b>Schmidt</b>
+          (momentum/masa, el "Prandtl de masa"):</p>
+        <Eq block>{String.raw`Sh=\frac{k_c L}{D_{AB}}\qquad Sc=\frac{\nu}{D_{AB}}=\frac{\mu}{\rho D_{AB}}\approx 470`}</Eq>
+        <p><Eq>{String.raw`Sh=2`}</Eq> es el límite difusivo de una esfera estancada; el burbujeo lo eleva muy por encima.
+          Correlación de Frössling/Ranz–Marshall: <Eq>{String.raw`Sh=2+0.6\,Re^{1/2}Sc^{1/3}`}</Eq>.</p>
+      </div>
+      <div className="card">
+        <h3>Simulación · El vaso (partícula encogiente + CO₂)</h3>
+        <GlassSim/>
+      </div>
+      <div className="card">
+        <h3>Simulación · Capa límite de concentración</h3>
+        <BoundaryLayerSim/>
+      </div>
+    </section>
+  );
+}
+
+function ReaccionTab(){
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">2</span>Reacción acoplada al transporte</h2>
+      <p className="lead">¿Manda la química o el transporte? Lo decide el número de Damköhler.</p>
+      <div className="card">
+        <span className="badge reaccion">Concepto</span>
+        <p>La protonación del bicarbonato es <b>muy rápida</b>; el cuello de botella es disolver el sólido y
+          desgasificar el CO₂. El balance de especie con convección, difusión y reacción es:</p>
+        <Eq block>{String.raw`\frac{\partial C_A}{\partial t}+\mathbf{v}\cdot\nabla C_A=D_{AB}\nabla^2 C_A+R_A`}</Eq>
+        <p>La competencia reacción/transporte se mide con el <b>número de Damköhler</b> (y, en la película
+          interfacial de desorción, el <b>número de Hatta</b>):</p>
+        <Eq block>{String.raw`Da=\frac{k_r C_0 L}{k_c}\qquad Ha=\frac{\sqrt{k_r D_{AB}}}{k_c}`}</Eq>
+        <div className="callout"><Eq>{String.raw`Da\gg1`}</Eq> en este sistema: los reactivos se consumen en cuanto se
+          disuelven ⇒ el proceso está <b>controlado por transferencia de masa</b>, no por la cinética intrínseca.</div>
+      </div>
+      <div className="card">
+        <h3>Simulación · Generación de CO₂ vs tiempo</h3>
+        <KineticsSim/>
+      </div>
+    </section>
+  );
+}
+
+function MomentumTab(){
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">3</span>Momentum: burbujas y convección</h2>
+      <p className="lead">El CO₂ nuclea, asciende por flotación y <b>autoagita</b> el vaso, retroalimentando la disolución.</p>
+      <div className="card">
+        <span className="badge momentum">Concepto</span>
+        <p>Cada burbuja asciende cuando el empuje vence al arrastre. En el terminal:</p>
+        <Eq block>{String.raw`\underbrace{\tfrac{4}{3}\pi r^3(\rho_L-\rho_g)g}_{\text{empuje}}=\underbrace{\tfrac12 C_D\rho_L u_t^2\,\pi r^2}_{\text{arrastre}}`}</Eq>
+        <p>El régimen lo fija el <b>Reynolds de burbuja</b>; la deformación, el <b>Eötvös</b>; y la mezcla global,
+          el <b>Grashof/Rayleigh</b> de masa (convección natural):</p>
+        <Eq block>{String.raw`Re_b=\frac{\rho_L u_t d_b}{\mu_L}\qquad Eo=\frac{(\rho_L-\rho_g)g\,d_b^2}{\sigma}\qquad Ra=Gr\,Sc`}</Eq>
+        <div className="callout warn"><b>Cuidado:</b> para <Eq>{String.raw`d_b\sim1`}</Eq> mm,
+          <Eq>{String.raw`Re_b\approx200`}</Eq> (régimen elipsoidal). <b>La ley de Stokes no es válida</b>;
+          la velocidad de ascenso real es ~0.25–0.3 m/s, casi independiente del tamaño.</div>
+      </div>
+      <div className="card">
+        <h3>Simulación · Diagrama de fuerzas y número de Reynolds</h3>
+        <BubbleSim/>
+      </div>
+    </section>
+  );
+}
+
+function EnergiaTab(){
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">4</span>Energía: enfriamiento endotérmico</h2>
+      <p className="lead">La disolución/desgasificación absorbe calor: el agua <b>se enfría</b>, y eso frena el transporte.</p>
+      <div className="card">
+        <span className="badge energia">Concepto</span>
+        <p>El proceso global es <b>endotérmico</b> (<Eq>{String.raw`\Delta H_{rxn}>0`}</Eq>): aunque la neutralización
+          libera algo de calor, dominan la disolución de las sales y la liberación de CO₂. Balance de energía con
+          término fuente (sumidero) e intercambio con el entorno:</p>
+        <Eq block>{String.raw`\rho c_p\!\left(\frac{\partial T}{\partial t}+\mathbf{v}\cdot\nabla T\right)=k\nabla^2 T+\dot q_{rxn},\qquad \dot q_{rxn}=(-\Delta H_{rxn})\,r`}</Eq>
+        <p>La temperatura modula todo el sistema:</p>
+        <Eq block>{String.raw`D_{AB}=\frac{k_B T}{6\pi\mu r_h}\qquad k_r=A\,e^{-E_a/RT}\qquad C_{CO_2}=H(T)\,p_{CO_2}`}</Eq>
+        <div className="callout">Por eso la tableta se disuelve <b>más rápido en agua tibia</b>: sube <Eq>{String.raw`D`}</Eq>
+          y <Eq>{String.raw`k_c`}</Eq>, baja <Eq>{String.raw`\mu`}</Eq>, la reacción acelera y el CO₂ es menos soluble (sale mejor).</div>
+        <p>Comparando transporte de calor vs masa, <Eq>{String.raw`Le=\alpha/D=Sc/Pr\approx67`}</Eq>: el calor se
+          uniformiza mucho antes que la concentración, confirmando que el <b>control sigue siendo de masa</b>.</p>
+      </div>
+      <div className="card">
+        <h3>Simulación · Curva de enfriamiento</h3>
+        <ThermoSim/>
+      </div>
+    </section>
+  );
+}
+
+function SintesisTab(){
+  const rows=[
+    ['Sherwood','k_c L/D','conv. masa / difusión','≫ 2','convección domina la disolución'],
+    ['Schmidt','\\nu/D','momentum / masa','≈ 470','capa límite de masa muy delgada'],
+    ['Reynolds','\\rho u d/\\mu','inercia / viscosidad','≈ 100–300','burbujas elipsoidales (no Stokes)'],
+    ['Damköhler','k_r C_0 L/k_c','reacción / transporte','≫ 1','control por transferencia de masa'],
+    ['Prandtl','\\nu/\\alpha','momentum / calor','≈ 7','—'],
+    ['Lewis','\\alpha/D','calor / masa','≈ 67','el calor se uniformiza antes'],
+    ['Eötvös','\\Delta\\rho g d^2/\\sigma','boyantes / tensión sup.','O(0.1–1)','deformación de la burbuja'],
+  ];
+  return (
+    <section className="tab-content">
+      <h2 className="sec"><span className="num">5</span>Síntesis y diseño de la tableta</h2>
+      <p className="lead">Cómo se integran los tres fenómenos y por qué la tableta se diseña porosa y prensada.</p>
+      <div className="card">
+        <h3>El ciclo acoplado y autorregulado</h3>
+        <ul className="clean">
+          <li>El agua penetra poros y <b>disuelve</b> los sólidos (masa, control de película).</li>
+          <li>La <b>reacción</b> rápida (<Eq>{String.raw`Da\gg1`}</Eq>) consume reactivos y genera CO₂.</li>
+          <li>El CO₂ <b>nuclea y asciende</b> (momentum), <b>agita</b> el medio y sube <Eq>{String.raw`k_c/Sh`}</Eq>.</li>
+          <li>La reacción <b>enfría</b> (energía): baja <Eq>{String.raw`D`}</Eq> y la cinética — efecto moderador.</li>
+        </ul>
+        <p>La velocidad global escala como <Eq>{String.raw`\dot m=k_c A\,(C_s-C_\infty)`}</Eq>, y el balance de CO₂ cierra el modelo:</p>
+        <Eq block>{String.raw`\frac{dn_{CO_2}}{dt}=\underbrace{rV}_{\text{generación}}-\underbrace{k_L a\,(C_{CO_2}-C^*)V}_{\text{desorción a burbujas}}`}</Eq>
+      </div>
+      <div className="card">
+        <h3>Por qué se diseña así (criterio de ingeniería)</h3>
+        <ul className="clean">
+          <li><b>Área grande</b>: polvos finos prensados y porosos → más flux total (factor dominante manipulable).</li>
+          <li><b>Porosidad/capilaridad</b>: el agua reacciona en todo el volumen casi a la vez.</li>
+          <li><b>Estequiometría 3:1</b> con exceso de bicarbonato → libera todo el CO₂.</li>
+          <li><b>Burbujeo autoagitante</b>: no necesita agitación externa y fragmenta la tableta (más área).</li>
+          <li><b>Agua tibia recomendada</b>: sube <Eq>{String.raw`D`}</Eq>, <Eq>{String.raw`k_c`}</Eq> y la cinética.</li>
+        </ul>
+      </div>
+      <div className="card">
+        <h3>Mapa de números adimensionales</h3>
+        <table className="dim">
+          <thead><tr><th>Número</th><th>Definición</th><th>Compara</th><th>Orden</th><th>Implicación</th></tr></thead>
+          <tbody>
+            {rows.map((r,i)=>(<tr key={i}>
+              <td>{r[0]}</td><td><Eq>{r[1]}</Eq></td><td>{r[2]}</td><td>{r[3]}</td><td>{r[4]}</td>
+            </tr>))}
+          </tbody>
+        </table>
+      </div>
+      <div className="card">
+        <h3>Supuestos del modelo</h3>
+        <p style={{fontSize:'.92rem',color:'#3a4d57'}}>Propiedades a 25 °C y 1 atm; agua tratada como medio diluido;
+          burbujas esféricas idealizadas; interfaz en equilibrio local (Henry); reacción rápida frente al transporte;
+          cuasi-estado estacionario para las capas límite aunque el proceso global es transitorio. Las simulaciones son
+          <b> cualitativas y didácticas</b>: reproducen tendencias correctas, no valores de proceso exactos.</p>
+      </div>
+    </section>
+  );
+}
+
+/* ============================================================
+   APP
+   ============================================================ */
+const TABS=[
+  ['Intro','Resumen',Intro],
+  ['masa','Masa · disolución',MasaTab],
+  ['reaccion','Reacción',ReaccionTab],
+  ['momentum','Momentum · burbujas',MomentumTab],
+  ['energia','Energía',EnergiaTab],
+  ['sintesis','Síntesis',SintesisTab],
+];
+
+function App(){
+  const [tab,setTab]=useState('Intro');
+  const Active=(TABS.find(t=>t[0]===tab)||TABS[0])[2];
+  useEffect(()=>{ window.scrollTo({top:0,behavior:'smooth'}); },[tab]);
+  return (
+    <React.Fragment>
+      <header className="hero">
+        <p className="kicker">Ingeniería Química · Fenómenos de Transporte</p>
+        <h1>La efervescencia de una aspirina, explicada por transporte</h1>
+        <p className="sub">Qué pasa cuando una tableta efervescente cae al agua, contado a través de la
+          transferencia de masa, momentum y energía — con simulaciones interactivas.</p>
+        <span className="rxn">C₆H₈O₇ + 3 NaHCO₃ → Na₃C₆H₅O₇ + 3 CO₂↑ + 3 H₂O</span>
+      </header>
+      <nav className="tabs">
+        {TABS.map(t=>(
+          <button key={t[0]} className={tab===t[0]?'active':''} onClick={()=>setTab(t[0])}>{t[1]}</button>
+        ))}
+      </nav>
+      <Active/>
+      <footer className="foot">
+        Página educativa interactiva · React + SVG/Canvas + MathJax. Modelos cualitativos para ilustrar
+        fenómenos de transporte; los valores son órdenes de magnitud realistas, no datos de proceso.
+      </footer>
+    </React.Fragment>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
